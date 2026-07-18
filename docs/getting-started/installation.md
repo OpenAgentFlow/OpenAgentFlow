@@ -19,8 +19,8 @@ This guide walks you through setting up OpenAgentFlow from scratch.
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/openagentflow.git
-cd openagentflow
+git clone https://github.com/OpenAgentFlow/OpenAgentFlow.git
+cd OpenAgentFlow
 ```
 
 ---
