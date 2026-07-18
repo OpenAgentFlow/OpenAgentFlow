@@ -88,16 +88,24 @@ export class IRGenerator {
   // ── Agents ──────────────────────────────────────────────────────────────────
 
   buildAgents(agents) {
-    return agents.map(agent => ({
-      id: agent.id,
-      instructions: agent.instructions,
-      model: agent.model,
-      provider: agent.provider ?? null,
-      temperature: agent.temperature,
-      tools: agent.tools,
-      inputs: agent.inputs,
-      outputs: agent.outputs,
-    }));
+    return agents.map(agent => {
+      let provider = agent.provider ?? null;
+      if (!provider && agent.model) {
+        if (agent.model.startsWith('claude-')) provider = 'anthropic';
+        else if (agent.model.startsWith('gpt-') || agent.model.startsWith('o1') || agent.model.startsWith('o3')) provider = 'openai';
+        else if (agent.model.startsWith('gemini-') || agent.model.startsWith('gemma-')) provider = 'gemini';
+      }
+      return {
+        id: agent.id,
+        instructions: agent.instructions,
+        model: agent.model,
+        provider,
+        temperature: agent.temperature,
+        tools: agent.tools,
+        inputs: agent.inputs,
+        outputs: agent.outputs,
+      };
+    });
   }
 
   // ── Graph ───────────────────────────────────────────────────────────────────

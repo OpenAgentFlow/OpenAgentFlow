@@ -41,7 +41,7 @@
       "id": "Analyst",
       "instructions": "Analyze the requirements document.\nIdentify key features, constraints, and acceptance criteria.\nProduce a structured analysis.",
       "model": "gemma-4-26b-a4b-it",
-      "provider": null,
+      "provider": "gemini",
       "temperature": 0.3,
       "tools": [],
       "inputs": [
@@ -55,7 +55,7 @@
       "id": "Architect",
       "instructions": "Based on the analysis, design a technical architecture.\nInclude component diagrams, data flow, and API contracts.",
       "model": "gemma-4-26b-a4b-it",
-      "provider": null,
+      "provider": "gemini",
       "temperature": 0.5,
       "tools": [],
       "inputs": [
@@ -69,7 +69,7 @@
       "id": "Developer",
       "instructions": "Implement the solution based on the architecture.\nWrite clean, tested, production-ready code.",
       "model": "gemma-4-26b-a4b-it",
-      "provider": null,
+      "provider": "gemini",
       "temperature": 0.2,
       "tools": [
         "code_interpreter",

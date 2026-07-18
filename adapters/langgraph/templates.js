@@ -52,7 +52,44 @@ export function generateImportsTemplate({ typingImports, needsLlmProviders, need
 
   if (needsLlmProviders) {
     lines.push(``);
-    lines.push(`# LLM providers — Gemini is primary, OpenAI is fallback`);
+    lines.push(`# ─── Environment Variable Hierarchy ──────────────────────────────────────────`);
+    lines.push(`def _load_env_hierarchy():`);
+    lines.push(`    """Load environment variables from local .env and ~/.oaf/.env if not already set."""`);
+    lines.push(`    def parse_env_file(path):`);
+    lines.push(`        if not os.path.exists(path):`);
+    lines.push(`            return {}`);
+    lines.push(`        res = {}`);
+    lines.push(`        try:`);
+    lines.push(`            with open(path, "r", encoding="utf-8") as f:`);
+    lines.push(`                for line in f:`);
+    lines.push(`                    line = line.strip()`);
+    lines.push(`                    if not line or line.startswith("#") or "=" not in line:`);
+    lines.push(`                        continue`);
+    lines.push(`                    k, v = line.split("=", 1)`);
+    lines.push(`                    k, v = k.strip(), v.strip()`);
+    lines.push(`                    if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):`);
+    lines.push(`                        v = v[1:-1]`);
+    lines.push(`                    res[k] = v`);
+    lines.push(`        except Exception:`);
+    lines.push(`            pass`);
+    lines.push(`        return res`);
+    lines.push(``);
+    lines.push(`    local_path = os.path.join(os.getcwd(), ".env")`);
+    lines.push(`    global_path = os.path.join(os.path.expanduser("~"), ".oaf", ".env")`);
+    lines.push(``);
+    lines.push(`    local_env = parse_env_file(local_path)`);
+    lines.push(`    global_env = parse_env_file(global_path)`);
+    lines.push(``);
+    lines.push(`    for k, v in local_env.items():`);
+    lines.push(`        if k not in os.environ:`);
+    lines.push(`            os.environ[k] = v`);
+    lines.push(`    for k, v in global_env.items():`);
+    lines.push(`        if k not in os.environ:`);
+    lines.push(`            os.environ[k] = v`);
+    lines.push(``);
+    lines.push(`_load_env_hierarchy()`);
+    lines.push(``);
+    lines.push(`# LLM providers — Gemini, OpenAI, Anthropic`);
     lines.push(`_LLM_PROVIDER = None`);
     lines.push(`try:`);
     lines.push(`    from langchain_google_genai import ChatGoogleGenerativeAI`);
@@ -61,13 +98,19 @@ export function generateImportsTemplate({ typingImports, needsLlmProviders, need
     lines.push(`except ImportError:`);
     lines.push(`    pass`);
     lines.push(``);
-    lines.push(`if _LLM_PROVIDER is None:`);
-    lines.push(`    try:`);
-    lines.push(`        from langchain_openai import ChatOpenAI`);
-    lines.push(`        if os.environ.get("OPENAI_API_KEY"):`);
-    lines.push(`            _LLM_PROVIDER = "openai"`);
-    lines.push(`    except ImportError:`);
-    lines.push(`        pass`);
+    lines.push(`try:`);
+    lines.push(`    from langchain_openai import ChatOpenAI`);
+    lines.push(`    if os.environ.get("OPENAI_API_KEY") and _LLM_PROVIDER is None:`);
+    lines.push(`        _LLM_PROVIDER = "openai"`);
+    lines.push(`except ImportError:`);
+    lines.push(`    pass`);
+    lines.push(``);
+    lines.push(`try:`);
+    lines.push(`    from langchain_anthropic import ChatAnthropic`);
+    lines.push(`    if os.environ.get("ANTHROPIC_API_KEY") and _LLM_PROVIDER is None:`);
+    lines.push(`        _LLM_PROVIDER = "anthropic"`);
+    lines.push(`except ImportError:`);
+    lines.push(`    pass`);
   }
 
   lines.push('');
@@ -123,14 +166,50 @@ export function generateLlmHelperTemplate({ defaultModel, defaultTemperature }) 
     `            "Please specify a 'model' property in your .oaf agent definition or set the OAF_DEFAULT_MODEL environment variable."`,
     `        )`,
     ``,
-    `    target_provider = provider if provider else _LLM_PROVIDER`,
+    `    target_provider = provider`,
+    `    if not target_provider and target_model:`,
+    `        if target_model.startswith("claude-"):`,
+    `            target_provider = "anthropic"`,
+    `        elif target_model.startswith("gpt-") or target_model.startswith("o1") or target_model.startswith("o3"):`,
+    `            target_provider = "openai"`,
+    `        elif target_model.startswith("gemini-") or target_model.startswith("gemma-"):`,
+    `            target_provider = "gemini"`,
+    `    if not target_provider:`,
+    `        target_provider = _LLM_PROVIDER`,
+    ``,
     `    if target_provider == "gemini":`,
-    `        return ChatGoogleGenerativeAI(model=target_model, temperature=temperature)`,
+    `        try:`,
+    `            _cls = globals().get("ChatGoogleGenerativeAI")`,
+    `            if _cls is None:`,
+    `                from langchain_google_genai import ChatGoogleGenerativeAI as _cls`,
+    `            inst = _cls(model=target_model, temperature=temperature)`,
+    `            inst._oaf_provider = "gemini"`,
+    `            return inst`,
+    `        except ImportError:`,
+    `            raise RuntimeError("Missing package: pip install langchain-google-genai")`,
     `    elif target_provider == "openai":`,
-    `        return ChatOpenAI(model=target_model, temperature=temperature)`,
+    `        try:`,
+    `            _cls = globals().get("ChatOpenAI")`,
+    `            if _cls is None:`,
+    `                from langchain_openai import ChatOpenAI as _cls`,
+    `            inst = _cls(model=target_model, temperature=temperature)`,
+    `            inst._oaf_provider = "openai"`,
+    `            return inst`,
+    `        except ImportError:`,
+    `            raise RuntimeError("Missing package: pip install langchain-openai")`,
+    `    elif target_provider == "anthropic":`,
+    `        try:`,
+    `            _cls = globals().get("ChatAnthropic")`,
+    `            if _cls is None:`,
+    `                from langchain_anthropic import ChatAnthropic as _cls`,
+    `            inst = _cls(model=target_model, temperature=temperature)`,
+    `            inst._oaf_provider = "anthropic"`,
+    `            return inst`,
+    `        except ImportError:`,
+    `            raise RuntimeError("Missing package: pip install langchain-anthropic")`,
     `    else:`,
     `        raise RuntimeError(`,
-    `            "No LLM provider available or configured. Set GOOGLE_API_KEY (Gemini) or OPENAI_API_KEY (OpenAI)."`,
+    `            "No LLM provider available or configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic)."`,
     `        )`,
     ``,
   ];
@@ -166,6 +245,7 @@ export function generateAgentNodeTemplate({
     `def ${fnName}(state: WorkflowState) -> WorkflowState:`,
     `    """Agent: ${id}"""`,
     `    llm = get_llm(model=${modelArg}, temperature=${temperature}, provider=${providerArg})`,
+    `    print(f'[${id}] Running agent (model=${modelArg}, provider={getattr(llm, "_oaf_provider", "unknown")})')`,
     ``,
     `    system_prompt = """${escapedInstructions}"""`,
     ``,
@@ -285,7 +365,7 @@ export function generateMainTemplate({ workflowName, initialStateFields, require
     `        print("  Example: export GOOGLE_API_KEY='your-key-here'")`,
     `        exit(1)`,
     ``,
-    `    print(f"Using LLM provider: {_LLM_PROVIDER}")`,
+    `    print(f"Default fallback provider: {_LLM_PROVIDER}")`,
     `    app = build_graph()`,
     ``,
     `    # Initial state — populate input fields before running`,

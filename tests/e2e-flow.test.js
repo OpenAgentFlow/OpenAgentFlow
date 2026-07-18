@@ -313,6 +313,17 @@ describe('E2E Flow Execution', () => {
       assert.ok(code.includes('OPENAI_API_KEY'));
     });
 
+    it('should include Anthropic fallback import', () => {
+      const code = generatePython(`
+        workflow "Test" {
+          agent A { instructions: "test" }
+          flow { start -> A  A -> end }
+        }
+      `);
+      assert.ok(code.includes('ChatAnthropic'));
+      assert.ok(code.includes('ANTHROPIC_API_KEY'));
+    });
+
     it('should use provided model directly without mapping', () => {
       const code = generatePython(`
         workflow "Test" {
@@ -321,8 +332,9 @@ describe('E2E Flow Execution', () => {
         }
       `);
       assert.ok(code.includes('target_model = model if model else os.environ.get("OAF_DEFAULT_MODEL")'));
-      assert.ok(code.includes('ChatGoogleGenerativeAI(model=target_model'));
-      assert.ok(code.includes('ChatOpenAI(model=target_model'));
+      assert.ok(code.includes('ChatGoogleGenerativeAI') && (code.includes('ChatGoogleGenerativeAI(model=target_model') || code.includes('_cls(model=target_model')));
+      assert.ok(code.includes('ChatOpenAI') && (code.includes('ChatOpenAI(model=target_model') || code.includes('_cls(model=target_model')));
+      assert.ok(code.includes('ChatAnthropic') && (code.includes('ChatAnthropic(model=target_model') || code.includes('_cls(model=target_model')));
       assert.ok(!code.includes('_GEMINI_MODEL_MAP'), 'Should NOT contain model mapping');
     });
 

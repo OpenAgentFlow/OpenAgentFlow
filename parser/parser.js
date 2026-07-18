@@ -338,7 +338,7 @@ export class Parser {
           break;
         }
         case 'provider': {
-          const val = this.expect(TokenType.STRING, 'expected provider string ("gemini" or "openai")').value;
+          const val = this.expect(TokenType.STRING, 'expected provider string ("gemini", "openai", or "anthropic")').value;
           if (val.trim() === '') {
             throw new ParseError(`Agent "${idToken.value}" provider cannot be empty string`, propToken);
           }

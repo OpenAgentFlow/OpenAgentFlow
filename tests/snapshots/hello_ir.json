@@ -12,7 +12,7 @@
       "id": "Greeter",
       "instructions": "Say hello to the user.",
       "model": "gemma-4-26b-a4b-it",
-      "provider": null,
+      "provider": "gemini",
       "temperature": null,
       "tools": [],
       "inputs": [],

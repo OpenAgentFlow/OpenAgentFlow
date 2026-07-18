@@ -57,7 +57,7 @@ source venv/bin/activate
 ### Install Runtime Dependencies
 
 ```bash
-pip install langgraph langchain-google-genai langchain-openai pydantic
+pip install langgraph langchain-google-genai langchain-openai langchain-anthropic pydantic
 ```
 
 These packages provide:
@@ -67,66 +67,65 @@ These packages provide:
 | `langgraph` | Graph-based workflow execution engine |
 | `langchain-google-genai` | Google Gemini LLM integration |
 | `langchain-openai` | OpenAI GPT integration |
+| `langchain-anthropic` | Anthropic Claude integration |
 | `pydantic` | Data validation (LangGraph dependency) |
 
 ---
 
 ## 4. Configure API Keys
 
-OpenAgentFlow supports two LLM providers. You need **at least one** API key to execute workflows.
+OpenAgentFlow supports three LLM providers (**Gemini**, **OpenAI**, and **Anthropic**). You need **at least one** API key to execute workflows.
 
-### Option A: Google Gemini (Recommended)
+### Option A: Interactive Utility (`oaf auth`) — Recommended
 
-Gemini is the default provider — faster and more cost-effective for most use cases.
+The easiest way to configure your API keys across any machine is using the interactive `oaf auth` utility, which stores them securely with `0o600` permissions inside `~/.oaf/.env`:
 
 ```bash
-# Windows PowerShell
+node cli/index.js auth
+# Or if installed globally: oaf auth
+```
+
+### Option B: Manual Environment Variables
+
+**Windows PowerShell:**
+```powershell
 $env:GOOGLE_API_KEY = "your-gemini-api-key"
-
-# macOS / Linux
-export GOOGLE_API_KEY="your-gemini-api-key"
-```
-
-Get your key from [Google AI Studio](https://aistudio.google.com/apikey).
-
-### Option B: OpenAI
-
-```bash
-# Windows PowerShell
 $env:OPENAI_API_KEY = "your-openai-api-key"
-
-# macOS / Linux
-export OPENAI_API_KEY="your-openai-api-key"
+$env:ANTHROPIC_API_KEY = "your-anthropic-api-key"
 ```
 
-Get your key from [OpenAI Platform](https://platform.openai.com/api-keys).
+**macOS / Linux:**
+```bash
+export GOOGLE_API_KEY="your-gemini-api-key"
+export OPENAI_API_KEY="your-openai-api-key"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+```
 
-### Using `env.example`
+### Using `env.example` & 4-Tier Resolution Hierarchy
 
 The project includes an `env.example` template:
 
 ```bash
-# Copy and fill in your keys
 cp env.example .env
 ```
 
-```ini
-# Gemini API key (primary)
-GOOGLE_API_KEY=your-gemini-api-key-here
-
-# OpenAI API key (fallback)
-OPENAI_API_KEY=your-openai-api-key-here
-```
+OpenAgentFlow automatically loads variables using a **4-tier hierarchy** (highest to lowest priority):
+1. **Inline CLI Overrides** (`OPENAI_API_KEY=... oaf run ...`)
+2. **Local Project `.env`** (adjacent to `.oaf` file)
+3. **System Environment Variables**
+4. **Global Store (`~/.oaf/.env`)**
 
 > **Important:** Never commit your `.env` file to version control. It is included in `.gitignore`.
 
-### Provider Priority
+### Provider Priority & Inference
 
-When both keys are set, the runtime selects a provider in this order:
-
-1. **Explicit `provider` property** on the agent (if set in `.oaf`)
-2. **`GOOGLE_API_KEY`** → uses Gemini
-3. **`OPENAI_API_KEY`** → uses OpenAI
+When executing a workflow, OAF selects the provider for each agent in this exact order:
+1. **Explicit `provider` property** on the agent (`provider: "gemini"`, `"openai"`, or `"anthropic"`)
+2. **Model prefix inference**:
+   - `gemini-*`, `gemma-*` → `"gemini"`
+   - `gpt-*`, `o1`, `o3` → `"openai"`
+   - `claude-*` → `"anthropic"`
+3. **Key fallback order**: `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`
 
 ---
 
@@ -138,7 +137,7 @@ When both keys are set, the runtime selects a provider in this order:
 npm test
 ```
 
-You should see **131 tests passing** across 9 test files.
+You should see **163 tests passing** across 10 test files.
 
 ### Check the CLI
 

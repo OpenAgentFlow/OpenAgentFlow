@@ -197,6 +197,26 @@ digraph workflow {
 
 ---
 
+### `auth`
+
+Interactive utility to configure LLM API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`) and store them in the global configuration store at `~/.oaf/.env`.
+
+```bash
+node cli/index.js auth
+```
+
+**Example:**
+```bash
+oaf auth
+```
+
+**Behavior:**
+Prompts for each API key individually. Only non-empty inputs update existing credentials. Automatically creates `~/.oaf/.env` with strict `0o600` (`-rw-------`) file permissions.
+
+**Use when:** Setting up OpenAgentFlow on a new machine or updating your API keys without editing `.env` files manually.
+
+---
+
 ## Global Options
 
 | Flag | Description |
@@ -228,18 +248,31 @@ node cli/index.js run file.oaf -i data.json
 |---|---|---|
 | `GOOGLE_API_KEY` | Google Gemini API key | `run` command, generated Python |
 | `OPENAI_API_KEY` | OpenAI API key | `run` command, generated Python |
+| `ANTHROPIC_API_KEY` | Anthropic API key | `run` command, generated Python |
 | `OAF_DEFAULT_MODEL` | Default model when agent has no `model` property | `run` command, generated Python |
 | `OAF_INPUT_FILE` | Runtime input JSON file path (alternative to `--input`) | Generated Python scripts |
 | `VIRTUAL_ENV` | Python virtual environment path (auto-detected) | `run` command |
 
-### Provider Priority
+### Environment Variable Hierarchy
+
+OpenAgentFlow resolves configuration using a 4-tier hierarchy (highest to lowest precedence):
+
+1. **Inline CLI overrides:** `OPENAI_API_KEY=sk-... oaf run workflow.oaf`
+2. **Local Project `.env`:** Located alongside the target `.oaf` file.
+3. **System Environment Variables:** Set directly in the shell environment.
+4. **Global OAF Store (`~/.oaf/.env`):** Global user credentials managed by `oaf auth`.
+
+### Provider Priority & Inference
 
 When executing workflows, the provider is selected in this order:
 
-1. Agent's explicit `provider` property (in `.oaf`)
-2. `GOOGLE_API_KEY` present → Gemini
-3. `OPENAI_API_KEY` present → OpenAI
-4. Error: no provider available
+1. Agent's explicit `provider` property (`"anthropic"`, `"gemini"`, or `"openai"`)
+2. Automatic model prefix inference:
+   - `claude-*` → `"anthropic"`
+   - `gpt-*`, `o1`, `o3` → `"openai"`
+   - `gemini-*`, `gemma-*` → `"gemini"`
+3. API Key availability fallback order: `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`
+4. Error: no provider available or configured
 
 ---
 

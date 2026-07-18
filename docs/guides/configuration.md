@@ -8,67 +8,96 @@ This guide covers all configuration options in OpenAgentFlow — environment var
 
 | Variable | Required | Description |
 |---|---|---|
-| `GOOGLE_API_KEY` | At least one of Gemini/OpenAI | Google Gemini API key |
-| `OPENAI_API_KEY` | At least one of Gemini/OpenAI | OpenAI API key |
+| `GOOGLE_API_KEY` | At least one of Gemini/OpenAI/Anthropic | Google Gemini API key |
+| `OPENAI_API_KEY` | At least one of Gemini/OpenAI/Anthropic | OpenAI API key |
+| `ANTHROPIC_API_KEY` | At least one of Gemini/OpenAI/Anthropic | Anthropic API key |
 | `OAF_DEFAULT_MODEL` | No | Default model when agent has no `model` property |
 | `OAF_INPUT_FILE` | No | Runtime path to a JSON file for initial state injection |
 | `VIRTUAL_ENV` | No | Python virtual environment path (auto-detected) |
 
-### Setting Environment Variables
+### Environment Variable Hierarchy
+
+OpenAgentFlow resolves environment variables using a 4-tier resolution hierarchy (highest to lowest priority):
+
+1. **Inline CLI overrides:** `OPENAI_API_KEY=sk-... oaf run summarize.oaf`
+2. **Local Project `.env`:** An `.env` file located in the same directory as the `.oaf` file being executed or compiled.
+3. **System Environment Variables:** Standard system environment variables set in the shell (`export KEY=val` or `$env:KEY = "val"`).
+4. **Global OAF Store (`~/.oaf/.env`):** Global user configuration baseline.
+
+When compiling or running a workflow, `oaf` automatically loads local and global `.env` files into the runtime environment without overwriting variables that are already set by higher-priority tiers.
+
+### `oaf auth` Command
+
+You can easily set up your API keys using the interactive `oaf auth` command:
+
+```bash
+oaf auth
+```
+
+This interactive utility prompts you for your API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`) and stores them securely in the global configuration file at `~/.oaf/.env`. When creating `~/.oaf/.env`, OpenAgentFlow automatically sets the file permissions to `0o600` (`-rw-------`), ensuring that your API keys are readable and writable only by the file owner.
+
+### Setting Environment Variables Manually
 
 **Windows PowerShell:**
 ```powershell
-$env:GOOGLE_API_KEY = "your-key"
-$env:OAF_DEFAULT_MODEL = "gemini-2.0-flash"
+$env:OPENAI_API_KEY = "sk-..."
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:GOOGLE_API_KEY = "AIza..."
+$env:OAF_DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
 ```
 
 **macOS / Linux:**
 ```bash
-export GOOGLE_API_KEY="your-key"
-export OAF_DEFAULT_MODEL="gemini-2.0-flash"
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GOOGLE_API_KEY="AIza..."
+export OAF_DEFAULT_MODEL="claude-3-5-sonnet-20241022"
 ```
 
 ---
 
 ## LLM Provider Configuration
 
-### Dual-Provider System
+### Multi-Provider System
 
-OAF supports two LLM providers. The generated Python code auto-detects which to use based on available API keys.
+OAF supports three leading LLM providers: **Gemini**, **OpenAI**, and **Anthropic**. The compiler and generated Python runtime auto-detect which provider to use based on model names and available API keys.
 
 ```mermaid
 graph TD
     A["Agent's explicit provider?"] -->|Yes| B["Use that provider"]
-    A -->|No| C["GOOGLE_API_KEY set?"]
-    C -->|Yes| D["Use Gemini"]
-    C -->|No| E["OPENAI_API_KEY set?"]
-    E -->|Yes| F["Use OpenAI"]
-    E -->|No| G["Error: No provider"]
+    A -->|No| C["Model prefix match?"]
+    C -->|"claude-*"| D["Use Anthropic"]
+    C -->|"gpt-* / o1 / o3"| E["Use OpenAI"]
+    C -->|"gemini-* / gemma-*"| F["Use Gemini"]
+    C -->|No prefix match| G["Check API keys in priority order"]
 ```
 
-### Provider Priority
+### Provider Priority & Inference
 
-1. **Per-agent `provider` property** — if set in `.oaf`, takes absolute priority
-2. **`GOOGLE_API_KEY`** — if environment variable is set, uses Gemini
-3. **`OPENAI_API_KEY`** — fallback if no Gemini key
+1. **Per-agent `provider` property** — if explicitly set (`provider: "anthropic"`, `"gemini"`, or `"openai"`), takes absolute priority.
+2. **Automatic Model Prefix Inference** — if `provider` is omitted, OAF infers the provider from the `model` string prefix:
+   - `claude-*` → `"anthropic"`
+   - `gpt-*`, `o1`, `o3` → `"openai"`
+   - `gemini-*`, `gemma-*` → `"gemini"`
+3. **Environment Key Fallback** — if neither `provider` nor a recognized model prefix is present, the runtime checks API keys in priority order (`GOOGLE_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`).
 
 ### Per-Agent Provider Override
 
-You can mix providers in a single workflow:
+You can mix providers across agents in a single workflow:
 
 ```oaf
 agent FastAnalyst {
     instructions: "Quick analysis."
     model: "gemini-2.0-flash"
-    provider: "gemini"          // Forces Gemini
+    provider: "gemini"          // Explicit Gemini
     inputs: [data]
     outputs: [analysis]
 }
 
 agent QualityWriter {
     instructions: "High-quality writing."
-    model: "gpt-4"
-    provider: "openai"          // Forces OpenAI
+    model: "claude-3-5-sonnet-20241022"
+    provider: "anthropic"       // Explicit Anthropic
     inputs: [analysis]
     outputs: [content]
 }
@@ -79,9 +108,9 @@ agent QualityWriter {
 Models are used **directly without mapping**. Whatever you write in `model:` is passed to the LLM provider as-is:
 
 ```oaf
-agent A { model: "gemini-2.0-flash" }    // → ChatGoogleGenerativeAI(model="gemini-2.0-flash")
-agent B { model: "gpt-4o" }              // → ChatOpenAI(model="gpt-4o")
-agent C { model: "gpt-4" }               // → ChatOpenAI(model="gpt-4")
+agent A { model: "gemini-2.0-flash" }           // → ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+agent B { model: "gpt-4o" }                     // → ChatOpenAI(model="gpt-4o")
+agent C { model: "claude-3-5-sonnet-20241022" } // → ChatAnthropic(model="claude-3-5-sonnet-20241022")
 ```
 
 ### Default Model
@@ -89,7 +118,7 @@ agent C { model: "gpt-4" }               // → ChatOpenAI(model="gpt-4")
 If an agent doesn't specify a `model`, the runtime checks `OAF_DEFAULT_MODEL`:
 
 ```bash
-export OAF_DEFAULT_MODEL="gemini-2.0-flash"
+export OAF_DEFAULT_MODEL="claude-3-5-sonnet-20241022"
 ```
 
 If neither is set, the `run` command fails with a clear error:

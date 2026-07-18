@@ -360,9 +360,9 @@ export class SemanticValidator {
     // 4.4 Provider & Model validation
     for (const agent of workflow.agents) {
       if (agent.provider !== null) {
-        if (agent.provider !== 'gemini' && agent.provider !== 'openai') {
+        if (agent.provider !== 'gemini' && agent.provider !== 'openai' && agent.provider !== 'anthropic') {
           this.result.error(
-            `Invalid provider value for agent "${agent.id}": "${agent.provider}" (must be "gemini" or "openai")`,
+            `Invalid provider value for agent "${agent.id}": "${agent.provider}" (must be "gemini", "openai", or "anthropic")`,
             agent.line, agent.column
           );
         }

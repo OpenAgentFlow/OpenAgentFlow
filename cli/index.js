@@ -23,6 +23,7 @@ import { execSync, spawn } from 'child_process';
 import os from 'os';
 import { Compiler } from '../compiler/compiler.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
+import { resolveEnvHierarchy, setupAuth } from './env.js';
 
 // ─── ANSI Colors ───────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ function printUsage() {
   console.log(`  oaf compile  <file.oaf> [--target T] [-o F] Compile to IR or runtime code`);
   console.log(`  oaf run      <file.oaf> [--target T]        Compile and execute workflow`);
   console.log(`  oaf graph    <file.oaf>                     Output workflow graph (DOT format)`);
+  console.log(`  oaf auth                                    Set up API keys interactively`);
   console.log();
   console.log(`${colors.bold}Options:${colors.reset}`);
   console.log(`  --target, -t <target>   Compilation target: ir (default), langgraph`);
@@ -190,6 +192,7 @@ function cmdParse(filePath) {
  * Parse and run semantic validation.
  */
 function cmdValidate(filePath) {
+  resolveEnvHierarchy(filePath);
   const { source, filename } = readSource(filePath);
   const compiler = new Compiler(source, filename);
 
@@ -227,6 +230,7 @@ function cmdValidate(filePath) {
  *   langgraph — Generate Python code via LangGraph adapter
  */
 function cmdCompile(filePath, flags, positional = []) {
+  resolveEnvHierarchy(filePath);
   const target = flags.get('target') ?? 'ir';
   const outputFile = flags.get('output');
   const rawInputPath = flags.get('input') || positional[2] || null;
@@ -274,6 +278,7 @@ function cmdCompile(filePath, flags, positional = []) {
  * Currently supports: langgraph (default for run command)
  */
 function cmdRun(filePath, flags, positional = []) {
+  resolveEnvHierarchy(filePath);
   const target = flags.get('target') ?? 'langgraph';
   const rawInputPath = flags.get('input') || positional[2] || null;
   const inputPath = rawInputPath ? resolve(rawInputPath) : null;
@@ -301,16 +306,58 @@ function cmdRun(filePath, flags, positional = []) {
   }
 
   // Pre-flight check 2: API Keys & OAF_DEFAULT_MODEL
-  if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY && result.ir.agents.length > 0) {
-    console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini) or OPENAI_API_KEY (OpenAI) to execute workflows.`);
-    process.exit(1);
-  }
-
   for (const agent of result.ir.agents) {
     if ((agent.model === null || agent.model === undefined) && !process.env.OAF_DEFAULT_MODEL) {
       console.error(`${colors.red}Error:${colors.reset} No model specified for agent "${agent.id}" and no default model configured. Please specify a 'model' property in your agent definition or set the OAF_DEFAULT_MODEL environment variable.`);
       process.exit(1);
     }
+
+    let provider = agent.provider;
+    if (!provider && agent.model) {
+      if (agent.model.startsWith('claude-')) provider = 'anthropic';
+      else if (agent.model.startsWith('gpt-') || agent.model.startsWith('o1') || agent.model.startsWith('o3')) provider = 'openai';
+      else if (agent.model.startsWith('gemini-') || agent.model.startsWith('gemma-')) provider = 'gemini';
+    }
+
+    if (provider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
+      console.error(`${colors.red}Error:${colors.reset} Missing required API key "ANTHROPIC_API_KEY" for agent "${agent.id}" (provider: anthropic).`);
+      console.error(`Looked in order of priority:`);
+      console.error(`  1. Inline CLI overrides`);
+      console.error(`  2. Local Project .env`);
+      console.error(`  3. System Environment Variables`);
+      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+      process.exit(1);
+    } else if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
+      console.error(`${colors.red}Error:${colors.reset} Missing required API key "OPENAI_API_KEY" for agent "${agent.id}" (provider: openai).`);
+      console.error(`Looked in order of priority:`);
+      console.error(`  1. Inline CLI overrides`);
+      console.error(`  2. Local Project .env`);
+      console.error(`  3. System Environment Variables`);
+      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+      process.exit(1);
+    } else if (provider === 'gemini' && !process.env.GOOGLE_API_KEY) {
+      console.error(`${colors.red}Error:${colors.reset} Missing required API key "GOOGLE_API_KEY" for agent "${agent.id}" (provider: gemini).`);
+      console.error(`Looked in order of priority:`);
+      console.error(`  1. Inline CLI overrides`);
+      console.error(`  2. Local Project .env`);
+      console.error(`  3. System Environment Variables`);
+      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+      process.exit(1);
+    }
+  }
+
+  if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && result.ir.agents.length > 0) {
+    console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
+    console.error(`Looked in order of priority:`);
+    console.error(`  1. Inline CLI overrides`);
+    console.error(`  2. Local Project .env`);
+    console.error(`  3. System Environment Variables`);
+    console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+    console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+    process.exit(1);
   }
 
   // Generate Python code
@@ -411,6 +458,14 @@ function getPythonCommand() {
 }
 
 /**
+ * oaf auth
+ * Interactive prompt to save API keys to ~/.oaf/.env
+ */
+function cmdAuth() {
+  setupAuth();
+}
+
+/**
  * oaf graph <file>
  * Compile and output the workflow graph in Graphviz DOT format.
  */
@@ -474,6 +529,11 @@ function main() {
   const { positional, flags } = parseArgs(rawArgs);
   const command = positional[0];
   const filePath = positional[1];
+
+  if (command === 'auth') {
+    cmdAuth();
+    return;
+  }
 
   if (!filePath && ['parse', 'validate', 'compile', 'run', 'graph'].includes(command)) {
     console.error(`${colors.red}Error:${colors.reset} Missing file argument.`);

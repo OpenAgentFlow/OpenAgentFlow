@@ -50,6 +50,8 @@ describe('LangGraph Adapter', () => {
       `);
       assert.ok(code.includes('ChatOpenAI'));
       assert.ok(code.includes('ChatGoogleGenerativeAI'));
+      assert.ok(code.includes('ChatAnthropic'));
+      assert.ok(code.includes('_load_env_hierarchy()'));
     });
 
     it('should include TypedDict import', () => {

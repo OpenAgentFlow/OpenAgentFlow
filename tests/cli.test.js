@@ -19,13 +19,17 @@ const EXAMPLES_DIR = resolve(__dirname, '..', 'examples');
 /**
  * Run the CLI and return { stdout, stderr, exitCode }.
  */
-function runCli(args, expectFailure = false) {
+function runCli(args, expectFailure = false, envOverrides = null) {
+  const options = {
+    cwd: resolve(__dirname, '..'),
+    encoding: 'utf-8',
+    timeout: 10000,
+  };
+  if (envOverrides) {
+    options.env = { ...process.env, ...envOverrides };
+  }
   try {
-    const stdout = execSync(`node "${CLI_PATH}" ${args}`, {
-      cwd: resolve(__dirname, '..'),
-      encoding: 'utf-8',
-      timeout: 10000,
-    });
+    const stdout = execSync(`node "${CLI_PATH}" ${args}`, options);
     return { stdout, stderr: '', exitCode: 0 };
   } catch (err) {
     if (expectFailure) {
@@ -50,6 +54,7 @@ describe('CLI', () => {
       assert.ok(stdout.includes('compile'));
       assert.ok(stdout.includes('run'));
       assert.ok(stdout.includes('graph'));
+      assert.ok(stdout.includes('auth'));
     });
   });
 
@@ -247,11 +252,14 @@ describe('CLI', () => {
     });
 
     it('should fail immediately in JS when API keys are missing', () => {
-      const { exitCode, stderr } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}"`, true);
-      if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY) {
-        assert.ok(exitCode !== 0);
-        assert.ok(stderr.includes('No LLM API key configured'));
-      }
+      const { exitCode, stderr } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}"`, true, {
+        GOOGLE_API_KEY: '',
+        OPENAI_API_KEY: '',
+        ANTHROPIC_API_KEY: '',
+        OAF_IGNORE_DOTENV: '1'
+      });
+      assert.ok(exitCode !== 0);
+      assert.ok(stderr.includes('Missing required API key') || stderr.includes('No LLM API key configured'));
     });
   });
 
