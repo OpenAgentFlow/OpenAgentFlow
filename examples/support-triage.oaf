@@ -20,26 +20,25 @@ workflow "SupportTriage" {
     }
 
     agent Classifier {
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-3.1-flash-lite"
         temperature: 0.1
         instructions: """
         Analyze the inbound customer_email.
         Determine the issue category (e.g., Billing, TechSupport, FeatureRequest).
-        Assign an urgency score from 1 (routine) to 5 (critical escalation).
+        Assign an urgency score from 1 (routine) to 5 (critical escalation).    
         """
         inputs: [customer_email]
         outputs: [categories, urgency]
     }
 
     agent Drafter {
-        model: "gpt-5.6-luna"
-        provider: "openai"
+        model: "gemma-4-26b-a4b-it"
         temperature: 0.7
         instructions: """
         Write a polite, empathetic response addressing the customer's issue.
         Tailor the tone based on the categories and urgency.
         If urgency is 4 or 5, assure them a senior human agent is being alerted.
-        Leave placeholders like [Name] for account details.
+        Leave placeholders like [Your Name] for account details.
         """
         inputs: [customer_email, categories, urgency]
         outputs: [draft_response]

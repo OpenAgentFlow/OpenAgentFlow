@@ -238,7 +238,7 @@ describe('LangGraph Adapter', () => {
           flow { start -> Worker  Worker -> end }
         }
       `);
-      assert.ok(code.includes('return {"result": result}'));
+      assert.ok(code.includes('_parse_llm_output(response.content, ["result"])'));
     });
 
     it('should parse JSON for multiple outputs', () => {
@@ -249,9 +249,10 @@ describe('LangGraph Adapter', () => {
           flow { start -> Worker  Worker -> end }
         }
       `);
-      assert.ok(code.includes('json.loads(result)'));
-      assert.ok(code.includes('"a" in parsed'));
-      assert.ok(code.includes('"b" in parsed'));
+      assert.ok(code.includes('_parse_llm_output(response.content, ["a","b"])'));
+      assert.ok(code.includes('def _parse_llm_output('));
+      assert.ok(code.includes('json.loads('));
+      assert.ok(code.includes('in parsed'));
     });
 
     it('should generate Annotated[..., operator.add] when @reducer option is used on state variable', () => {

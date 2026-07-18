@@ -212,6 +212,78 @@ export function generateLlmHelperTemplate({ defaultModel, defaultTemperature }) 
     `            "No LLM provider available or configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic)."`,
     `        )`,
     ``,
+    `def _parse_llm_output(raw_content, outputs):`,
+    `    """Cleanly parse LLM content (string or list of thinking/text blocks) into state updates."""`,
+    `    if isinstance(raw_content, list):`,
+    `        text_parts = []`,
+    `        for block in raw_content:`,
+    `            if isinstance(block, dict):`,
+    `                if block.get("type") == "text" or "text" in block:`,
+    `                    text_parts.append(str(block.get("text", "")))`,
+    `            elif isinstance(block, str):`,
+    `                text_parts.append(block)`,
+    `        result_text = "\\n".join(text_parts).strip()`,
+    `    else:`,
+    `        result_text = str(raw_content).strip()`,
+    ``,
+    `    clean_text = result_text`,
+    `    if clean_text.startswith("\`\`\`"):`,
+    `        lines = clean_text.splitlines()`,
+    `        if lines and lines[0].startswith("\`\`\`"):`,
+    `            lines = lines[1:]`,
+    `        if lines and lines[-1].startswith("\`\`\`"):`,
+    `            lines = lines[:-1]`,
+    `        clean_text = "\\n".join(lines).strip()`,
+    ``,
+    `    if len(outputs) == 1:`,
+    `        out_key = outputs[0]`,
+    `        try:`,
+    `            parsed = json.loads(clean_text)`,
+    `            if isinstance(parsed, dict) and out_key in parsed:`,
+    `                return {out_key: parsed[out_key]}`,
+    `        except Exception:`,
+    `            pass`,
+    `        return {out_key: result_text}`,
+    `    elif len(outputs) > 1:`,
+    `        target_text = clean_text`,
+    `        if not (target_text.startswith("{") and target_text.endswith("}")):`,
+    `            start_idx = target_text.find("{")`,
+    `            end_idx = target_text.rfind("}")`,
+    `            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:`,
+    `                target_text = target_text[start_idx:end_idx + 1]`,
+    `        try:`,
+    `            parsed = json.loads(target_text)`,
+    `            if isinstance(parsed, dict):`,
+    `                updates = {}`,
+    `                for out_key in outputs:`,
+    `                    if out_key in parsed:`,
+    `                        updates[out_key] = parsed[out_key]`,
+    `                if updates:`,
+    `                    return updates`,
+    `        except Exception:`,
+    `            pass`,
+    `        import re`,
+    `        updates = {}`,
+    `        for out_key in outputs:`,
+    `            pattern = re.compile("""(?:^|\\n)[ \\t]*[-*]?[ \\t]*(?:["'])?""" + re.escape(out_key) + """(?:["'])?[ \\t]*[:=][ \\t]*(.+)""", re.IGNORECASE)`,
+    `            match = pattern.search(clean_text)`,
+    `            if match:`,
+    `                val_str = match.group(1).strip()`,
+    `                try:`,
+    `                    updates[out_key] = json.loads(val_str)`,
+    `                except Exception:`,
+    `                    if val_str.isdigit() or (val_str.startswith("-") and val_str[1:].isdigit()):`,
+    `                        updates[out_key] = int(val_str)`,
+    `                    elif val_str.lower() in ("true", "false"):`,
+    `                        updates[out_key] = (val_str.lower() == "true")`,
+    `                    else:`,
+    `                        updates[out_key] = val_str`,
+    `        if updates:`,
+    `            return updates`,
+    `        return {outputs[0]: result_text}`,
+    `    else:`,
+    `        return {}`,
+    ``,
   ];
   return lines.join('\n');
 }
@@ -241,13 +313,17 @@ export function generateAgentNodeTemplate({
 }) {
   const modelArg = model != null ? `"${model}"` : `None`;
   const providerArg = provider ? `"${provider}"` : `None`;
+  const formatPrompt = outputs.length > 1
+    ? `\\n\\nIMPORTANT: You must respond ONLY with a valid JSON object containing exactly these fields: ${outputs.join(', ')}. Do not include any other text, markdown, or commentary outside the JSON object.`
+    : '';
+
   const lines = [
     `def ${fnName}(state: WorkflowState) -> WorkflowState:`,
     `    """Agent: ${id}"""`,
     `    llm = get_llm(model=${modelArg}, temperature=${temperature}, provider=${providerArg})`,
     `    print(f'[${id}] Running agent (model=${modelArg}, provider={getattr(llm, "_oaf_provider", "unknown")})')`,
     ``,
-    `    system_prompt = """${escapedInstructions}"""`,
+    `    system_prompt = """${escapedInstructions}${formatPrompt}"""`,
     ``,
   ];
 
@@ -270,28 +346,7 @@ export function generateAgentNodeTemplate({
   lines.push(`    ]`);
   lines.push(``);
   lines.push(`    response = llm.invoke(messages)`);
-  lines.push(`    result = response.content`);
-  lines.push(``);
-
-  if (outputs.length === 1) {
-    lines.push(`    return {"${outputs[0]}": result}`);
-  } else if (outputs.length > 1) {
-    lines.push(`    # Attempt to parse structured output for multiple output fields`);
-    lines.push(`    try:`);
-    lines.push(`        parsed = json.loads(result)`);
-    lines.push(`        updates = {}`);
-    for (const output of outputs) {
-      lines.push(`        if "${output}" in parsed:`);
-      lines.push(`            updates["${output}"] = parsed["${output}"]`);
-    }
-    lines.push(`        return updates`);
-    lines.push(`    except (json.JSONDecodeError, TypeError):`);
-    lines.push(`        # Fallback: assign raw result to first output field`);
-    lines.push(`        return {"${outputs[0]}": result}`);
-  } else {
-    lines.push(`    return {}`);
-  }
-
+  lines.push(`    return _parse_llm_output(response.content, ${JSON.stringify(outputs)})`);
   lines.push(``);
   lines.push(``);
   return lines.join('\n');
@@ -402,7 +457,7 @@ export function generateMainTemplate({ workflowName, initialStateFields, require
   lines.push(`            print(f"Error reading input file '{input_file}': {err}", file=sys.stderr)`);
   lines.push(`            sys.exit(1)`);
   lines.push(``);
-  
+
   if (requiredFields && requiredFields.length > 0) {
     lines.push(`    # Validate required state variables`);
     lines.push(`    missing_required = [`);
