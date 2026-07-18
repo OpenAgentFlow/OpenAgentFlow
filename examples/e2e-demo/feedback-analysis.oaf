@@ -1,0 +1,68 @@
+// E2E Demo: Customer Feedback Analysis Pipeline
+// This workflow analyzes customer feedback, categorizes it, and drafts a response.
+workflow "Customer Feedback Analysis" {
+
+    state {
+        feedback: string
+        sentiment: string
+        category: string
+        key_issues: list[string]
+        response_draft: string
+    }
+
+    agent SentimentAnalyzer {
+        instructions: """
+        Analyze the customer feedback for sentiment.
+        Classify it as one of: positive, negative, neutral, or mixed.
+        Return only the sentiment classification as a single word.
+        """
+        model: "gpt-4"
+        temperature: 0.1
+        inputs: [feedback]
+        outputs: [sentiment]
+    }
+
+    agent Categorizer {
+        instructions: """
+        Based on the customer feedback and its sentiment, categorize the feedback
+        into one of these categories: bug_report, feature_request, praise, complaint, question.
+        Also extract the top 3 key issues or themes as a bullet list.
+        Return a JSON object with "category" and "key_issues" fields.
+        """
+        model: "gpt-4"
+        temperature: 0.2
+        inputs: [feedback, sentiment]
+        outputs: [category, key_issues]
+    }
+
+    agent ResponseDrafter {
+        instructions: """
+        Draft a professional, empathetic customer response based on:
+        - The original feedback
+        - The detected sentiment
+        - The category
+        - The key issues identified
+
+        The response should acknowledge the customer's concerns,
+        be constructive, and offer next steps where appropriate.
+        Keep it under 200 words.
+        """
+        model: "gpt-4"
+        temperature: 0.7
+        inputs: [feedback, sentiment, category, key_issues]
+        outputs: [response_draft]
+    }
+
+    flow {
+        start -> SentimentAnalyzer
+        SentimentAnalyzer -> Categorizer
+        Categorizer -> ResponseDrafter
+        ResponseDrafter -> end
+    }
+
+    config {
+        version: "0.1"
+        runtime: "langgraph"
+    }
+
+}

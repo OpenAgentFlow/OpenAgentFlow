@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "workflow": {
+    "name": "Hello",
+    "config": {}
+  },
+  "state": {
+    "variables": []
+  },
+  "agents": [
+    {
+      "id": "Greeter",
+      "instructions": "Say hello to the user.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": null,
+      "tools": [],
+      "inputs": [],
+      "outputs": []
+    }
+  ],
+  "graph": {
+    "edges": [],
+    "entrypoint": "Greeter",
+    "terminals": [
+      "Greeter"
+    ]
+  }
+}

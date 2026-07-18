@@ -1,0 +1,104 @@
+{
+  "version": "0.1.0",
+  "workflow": {
+    "name": "Customer Feedback Analysis",
+    "config": {
+      "version": "0.1",
+      "runtime": "langgraph"
+    }
+  },
+  "state": {
+    "variables": [
+      {
+        "name": "feedback",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "sentiment",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "category",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "key_issues",
+        "type": "list<string>",
+        "options": []
+      },
+      {
+        "name": "response_draft",
+        "type": "string",
+        "options": []
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "SentimentAnalyzer",
+      "instructions": "Analyze the customer feedback for sentiment.\nClassify it as one of: positive, negative, neutral, or mixed.\nReturn only the sentiment classification as a single word.",
+      "model": "gpt-4",
+      "provider": null,
+      "temperature": 0.1,
+      "tools": [],
+      "inputs": [
+        "feedback"
+      ],
+      "outputs": [
+        "sentiment"
+      ]
+    },
+    {
+      "id": "Categorizer",
+      "instructions": "Based on the customer feedback and its sentiment, categorize the feedback\ninto one of these categories: bug_report, feature_request, praise, complaint, question.\nAlso extract the top 3 key issues or themes as a bullet list.\nReturn a JSON object with \"category\" and \"key_issues\" fields.",
+      "model": "gpt-4",
+      "provider": null,
+      "temperature": 0.2,
+      "tools": [],
+      "inputs": [
+        "feedback",
+        "sentiment"
+      ],
+      "outputs": [
+        "category",
+        "key_issues"
+      ]
+    },
+    {
+      "id": "ResponseDrafter",
+      "instructions": "Draft a professional, empathetic customer response based on:\n- The original feedback\n- The detected sentiment\n- The category\n- The key issues identified\n\nThe response should acknowledge the customer's concerns,\nbe constructive, and offer next steps where appropriate.\nKeep it under 200 words.",
+      "model": "gpt-4",
+      "provider": null,
+      "temperature": 0.7,
+      "tools": [],
+      "inputs": [
+        "feedback",
+        "sentiment",
+        "category",
+        "key_issues"
+      ],
+      "outputs": [
+        "response_draft"
+      ]
+    }
+  ],
+  "graph": {
+    "edges": [
+      {
+        "source": "SentimentAnalyzer",
+        "target": "Categorizer"
+      },
+      {
+        "source": "Categorizer",
+        "target": "ResponseDrafter"
+      }
+    ],
+    "entrypoint": "SentimentAnalyzer",
+    "terminals": [
+      "ResponseDrafter"
+    ]
+  }
+}

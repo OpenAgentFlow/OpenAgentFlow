@@ -1,0 +1,60 @@
+// Three-agent pipeline: research → design → implement
+workflow "Software Development" {
+
+    state {
+        requirements: string
+        analysis: string
+        architecture: string
+        implementation: string
+        status: string
+    }
+
+    agent Analyst {
+        instructions: """
+        Analyze the requirements document.
+        Identify key features, constraints, and acceptance criteria.
+        Produce a structured analysis.
+        """
+        model: "gemma-4-26b-a4b-it"
+        temperature: 0.3
+        inputs: [requirements]
+        outputs: [analysis]
+    }
+
+    agent Architect {
+        instructions: """
+        Based on the analysis, design a technical architecture.
+        Include component diagrams, data flow, and API contracts.
+        """
+        model: "gemma-4-26b-a4b-it"
+
+        temperature: 0.5
+        inputs: [analysis]
+        outputs: [architecture]
+    }
+
+    agent Developer {
+        instructions: """
+        Implement the solution based on the architecture.
+        Write clean, tested, production-ready code.
+        """
+        model: "gemma-4-26b-a4b-it"
+        temperature: 0.2
+        tools: ["code_interpreter", "file_writer"]
+        inputs: [architecture]
+        outputs: [implementation, status]
+    }
+
+    flow {
+        start -> Analyst
+        Analyst -> Architect
+        Architect -> Developer
+        Developer -> end
+    }
+
+    config {
+        version: "0.1"
+        timeout_seconds: 600
+    }
+
+}

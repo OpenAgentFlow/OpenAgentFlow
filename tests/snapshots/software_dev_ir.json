@@ -1,0 +1,103 @@
+{
+  "version": "0.1.0",
+  "workflow": {
+    "name": "Software Development",
+    "config": {
+      "version": "0.1",
+      "timeout_seconds": 600
+    }
+  },
+  "state": {
+    "variables": [
+      {
+        "name": "requirements",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "analysis",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "architecture",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "implementation",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "options": []
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "Analyst",
+      "instructions": "Analyze the requirements document.\nIdentify key features, constraints, and acceptance criteria.\nProduce a structured analysis.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": 0.3,
+      "tools": [],
+      "inputs": [
+        "requirements"
+      ],
+      "outputs": [
+        "analysis"
+      ]
+    },
+    {
+      "id": "Architect",
+      "instructions": "Based on the analysis, design a technical architecture.\nInclude component diagrams, data flow, and API contracts.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": 0.5,
+      "tools": [],
+      "inputs": [
+        "analysis"
+      ],
+      "outputs": [
+        "architecture"
+      ]
+    },
+    {
+      "id": "Developer",
+      "instructions": "Implement the solution based on the architecture.\nWrite clean, tested, production-ready code.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": 0.2,
+      "tools": [
+        "code_interpreter",
+        "file_writer"
+      ],
+      "inputs": [
+        "architecture"
+      ],
+      "outputs": [
+        "implementation",
+        "status"
+      ]
+    }
+  ],
+  "graph": {
+    "edges": [
+      {
+        "source": "Analyst",
+        "target": "Architect"
+      },
+      {
+        "source": "Architect",
+        "target": "Developer"
+      }
+    ],
+    "entrypoint": "Analyst",
+    "terminals": [
+      "Developer"
+    ]
+  }
+}

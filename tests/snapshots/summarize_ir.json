@@ -1,0 +1,82 @@
+{
+  "version": "0.1.0",
+  "workflow": {
+    "name": "Summarize",
+    "config": {
+      "version": "0.1",
+      "runtime": "langgraph"
+    }
+  },
+  "state": {
+    "variables": [
+      {
+        "name": "request",
+        "type": "string",
+        "options": []
+      },
+      {
+        "name": "source_text",
+        "type": "string",
+        "options": [
+          {
+            "name": "required",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "key_points",
+        "type": "list<string>",
+        "options": []
+      },
+      {
+        "name": "summary",
+        "type": "string",
+        "options": []
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "Analyst",
+      "instructions": "Analyze the request and source text.\nIdentify the most important facts, themes, and action items.\nProduce concise key_points only.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": null,
+      "tools": [],
+      "inputs": [
+        "request",
+        "source_text"
+      ],
+      "outputs": [
+        "key_points"
+      ]
+    },
+    {
+      "id": "Writer",
+      "instructions": "Use the key_points to write a clear, concise summary.\nPreserve meaning, remove redundancy, and match the requested tone.",
+      "model": "gemma-4-26b-a4b-it",
+      "provider": null,
+      "temperature": null,
+      "tools": [],
+      "inputs": [
+        "key_points"
+      ],
+      "outputs": [
+        "summary"
+      ]
+    }
+  ],
+  "graph": {
+    "edges": [
+      {
+        "source": "Analyst",
+        "target": "Writer"
+      }
+    ],
+    "entrypoint": "Analyst",
+    "terminals": [
+      "Writer"
+    ]
+  }
+}

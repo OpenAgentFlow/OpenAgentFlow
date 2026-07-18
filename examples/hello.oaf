@@ -1,0 +1,14 @@
+// Minimal workflow: single agent, no state
+workflow "Hello" {
+
+    agent Greeter {
+        instructions: "Say hello to the user."
+        model: "gemma-4-26b-a4b-it"
+    }
+
+    flow {
+        start -> Greeter
+        Greeter -> end
+    }
+
+}
