@@ -202,16 +202,7 @@ When compiling with `--target langgraph` (or running with `oaf run`), OpenAgentF
 
 ---
 
-- **Documentation & Walkthrough**: [`docs/examples/examples.md`](docs/examples/examples.md#4-feedback-analysis--multi-output-pipeline)
-
-### The Pipeline Topology:
-```
-[start] ──▶ SentimentAnalyzer (0.1 temp) ──▶ Categorizer (0.2 temp, multi-output) ──▶ ResponseDrafter (0.7 temp) ──▶ [end]
-```
-To run the end-to-end demo right now:
-```bash
-node cli/index.js run examples/e2e-demo/feedback-analysis.oaf
-```
+- **Documentation & Examples**: [`docs/examples/examples.md`](docs/examples/examples.md)
 
 ---
 
@@ -255,8 +246,7 @@ OpenAgentFlow/
 │   ├── hello.oaf                   # Minimal greeting workflow
 │   ├── summarize.oaf               # Two-agent summarization pipeline
 │   ├── software-dev.oaf            # Three-agent linear development workflow
-│   ├── support-triage.oaf          # Multi-provider customer triage workflow
-│   └── e2e-demo/                   # Full customer feedback analysis showcase
+│   └── support-triage.oaf          # Multi-provider customer triage workflow
 ├── tests/                          # 163-Test Suite across 10 Test Files
 │   ├── lexer.test.js               # Lexical tokenization tests
 │   ├── parser.test.js              # AST parsing, provider & syntax error tests

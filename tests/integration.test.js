@@ -119,20 +119,4 @@ describe('Integration: Example Files', () => {
     });
   });
 
-  describe('e2e-demo/feedback-analysis.oaf', () => {
-    it('should compile successfully', () => {
-      const result = compileFile('e2e-demo/feedback-analysis.oaf');
-      assert.strictEqual(result.status, 'success');
-    });
-
-    it('should have three agents in correct order', () => {
-      const result = compileFile('e2e-demo/feedback-analysis.oaf');
-      const ir = result.ir;
-
-      assert.strictEqual(ir.agents.length, 3);
-      assert.strictEqual(ir.graph.entrypoint, 'SentimentAnalyzer');
-      assert.deepStrictEqual(ir.graph.terminals, ['ResponseDrafter']);
-    });
-  });
-
 });

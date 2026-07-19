@@ -273,7 +273,7 @@ temperature: 0.7
 
 **Cause:** Unknown state option decorator.
 
-**Supported options:** `@required`, `@default`, `@description`, `@desc`, `@secret`, `@persist`, `@reducer`, `@min`, `@max`, `@pattern`
+**Supported options:** `@required`, `@default`, `@description`, `@desc`, `@reducer`, `@min`, `@max`
 
 ---
 

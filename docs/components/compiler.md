@@ -134,12 +134,9 @@ import { SUPPORTED_STATE_OPTIONS } from './compiler/index.js';
 //   default:   { description: '...', minArgs: 1, maxArgs: 1 },
 //   description: { description: '...', minArgs: 1, maxArgs: 1 },
 //   desc:      { description: '...', minArgs: 1, maxArgs: 1 },
-//   secret:    { description: '...', minArgs: 0, maxArgs: 0 },
-//   persist:   { description: '...', minArgs: 0, maxArgs: 1 },
 //   reducer:   { description: '...', minArgs: 1, maxArgs: 1 },
 //   min:       { description: '...', minArgs: 1, maxArgs: 1 },
 //   max:       { description: '...', minArgs: 1, maxArgs: 1 },
-//   pattern:   { description: '...', minArgs: 1, maxArgs: 1 },
 // }
 ```
 

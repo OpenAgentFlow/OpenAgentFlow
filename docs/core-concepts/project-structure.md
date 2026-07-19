@@ -38,9 +38,7 @@ OpenAgentFlow/
 │   ├── hello.oaf                   # Minimal single-agent workflow
 │   ├── summarize.oaf               # Two-agent pipeline with @required state
 │   ├── software-dev.oaf            # Three-agent pipeline with tools
-│   ├── summarize-input.json        # Sample input data for summarize workflow
-│   └── e2e-demo/
-│       └── feedback-analysis.oaf   # Multi-agent feedback analysis pipeline
+│   └── summarize-input.json        # Sample input data for summarize workflow
 │
 ├── tests/                          # Test Suite (131 tests, 9 files)
 │   ├── lexer.test.js               # Tokenization tests

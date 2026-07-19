@@ -74,11 +74,6 @@ describe('Snapshot Tests: IR Output Stability', () => {
     assertMatchesSnapshot(ir, 'software_dev_ir');
   });
 
-  it('feedback-analysis.oaf IR should match snapshot', () => {
-    const ir = compileToIR('e2e-demo/feedback-analysis.oaf');
-    assertMatchesSnapshot(ir, 'feedback_analysis_ir');
-  });
-
   it('IR version should be consistent', () => {
     const files = ['hello.oaf', 'summarize.oaf', 'software-dev.oaf'];
     const versions = files.map(f => compileToIR(f).version);

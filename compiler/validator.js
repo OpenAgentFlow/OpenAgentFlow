@@ -86,16 +86,6 @@ export const SUPPORTED_STATE_OPTIONS = {
     minArgs: 1,
     maxArgs: 1,
   },
-  secret: {
-    description: 'Marks the variable as containing sensitive or secret data',
-    minArgs: 0,
-    maxArgs: 0,
-  },
-  persist: {
-    description: 'Indicates whether the variable should be persisted across checkpoints',
-    minArgs: 0,
-    maxArgs: 1,
-  },
   reducer: {
     description: 'Specifies the merge strategy when multiple outputs update this variable (e.g. "append", "replace")',
     minArgs: 1,
@@ -108,11 +98,6 @@ export const SUPPORTED_STATE_OPTIONS = {
   },
   max: {
     description: 'Maximum numeric value allowed for int or float variables',
-    minArgs: 1,
-    maxArgs: 1,
-  },
-  pattern: {
-    description: 'Regular expression pattern required for string variables',
     minArgs: 1,
     maxArgs: 1,
   },

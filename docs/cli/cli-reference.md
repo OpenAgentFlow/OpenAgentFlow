@@ -138,8 +138,6 @@ node cli/index.js run examples/hello.oaf
 # Run with initial state data
 node cli/index.js run examples/summarize.oaf --input examples/summarize-input.json
 
-# Run the e2e demo
-node cli/index.js run examples/e2e-demo/feedback-analysis.oaf
 ```
 
 **Pre-flight checks (automatic):**

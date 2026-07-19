@@ -107,7 +107,7 @@ state {
     summary: string
     score: float @default(0.0)
     metadata: map[string, string]
-    tags: list[string] @persist @reducer("append")
+    tags: list[string] @reducer("append")
     count: int @min(0) @max(100)
 }
 ```
@@ -156,19 +156,15 @@ state {
 | `@default(value)` | Exactly 1 | Provides a default initial value if not provided |
 | `@description("text")` | Exactly 1 | Human-readable description for introspection or prompting |
 | `@desc("text")` | Exactly 1 | Shorthand for `@description` |
-| `@secret` | 0 | Marks the variable as containing sensitive data |
-| `@persist` or `@persist(flag)` | 0 or 1 | Indicates whether the variable should be persisted across checkpoints |
 | `@reducer("strategy")` | Exactly 1 | Merge strategy for concurrent updates (e.g., `"append"`, `"replace"`) |
 | `@min(num)` | Exactly 1 | Minimum numeric value allowed for `int` or `float` variables |
 | `@max(num)` | Exactly 1 | Maximum numeric value allowed for `int` or `float` variables |
-| `@pattern("regex")` | Exactly 1 | Regular expression pattern required for `string` variables |
 
 #### Option Arguments
 
 Arguments are enclosed in parentheses and can be:
 - Strings: `@description("User input")`
 - Numbers: `@min(0)`, `@max(100)`, `@default(0.5)`
-- Booleans: `@persist(true)`
 - Identifiers: `@reducer(append)`
 
 Multiple arguments are comma-separated. Trailing commas are allowed.

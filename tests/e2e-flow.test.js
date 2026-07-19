@@ -164,17 +164,6 @@ describe('E2E Flow Execution', () => {
       });
       assert.strictEqual(result.status, 0, `Python syntax error:\n${result.stderr}`);
     });
-
-    it('should generate syntactically valid Python for feedback-analysis.oaf', { skip: !pythonAvailable }, () => {
-      const source = readFileSync(resolve(EXAMPLES_DIR, 'e2e-demo', 'feedback-analysis.oaf'), 'utf-8');
-      const code = generatePython(source);
-
-      const result = spawnSync('python', ['-c', `import ast; ast.parse(${JSON.stringify(code)})`], {
-        encoding: 'utf-8',
-        timeout: 10000,
-      });
-      assert.strictEqual(result.status, 0, `Python syntax error:\n${result.stderr}`);
-    });
   });
 
   describe('Live LLM execution', () => {

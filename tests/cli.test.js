@@ -104,11 +104,6 @@ describe('CLI', () => {
       const { stdout } = runCli(`validate "${resolve(EXAMPLES_DIR, 'software-dev.oaf')}"`);
       assert.ok(stdout.includes('is valid'));
     });
-
-    it('should validate e2e-demo/feedback-analysis.oaf', () => {
-      const { stdout } = runCli(`validate "${resolve(EXAMPLES_DIR, 'e2e-demo', 'feedback-analysis.oaf')}"`);
-      assert.ok(stdout.includes('is valid'));
-    });
   });
 
   describe('compile command', () => {

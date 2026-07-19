@@ -102,7 +102,7 @@ State variables can include optional decorators prefixed with `@` after their ty
 state {
     request: string @required @description("Initial customer request")
     count: int @default(0) @min(0) @max(100)
-    history: list[string] @persist @reducer("append")
+    history: list[string] @reducer("append")
 }
 ```
 
@@ -114,12 +114,9 @@ All state options are validated at compile time by the semantic validator agains
 | `@required` | 0 | Marks the variable as required before workflow execution begins. |
 | `@default(value)` | exactly 1 | Provides a default initial value for the variable if not provided. |
 | `@description("text")` / `@desc("text")` | exactly 1 | Human-readable description of the state variable for introspection or prompting. |
-| `@secret` | 0 | Marks the variable as containing sensitive or secret data (e.g. API keys). |
-| `@persist(flag?)` | 0 or 1 | Indicates whether the variable should be persisted across checkpoints. |
 | `@reducer("strategy")` | exactly 1 | Specifies the merge strategy when multiple outputs update this variable (e.g. `"append"`, `"replace"`). |
 | `@min(num)` | exactly 1 | Minimum numeric value allowed for `int` or `float` variables. |
 | `@max(num)` | exactly 1 | Maximum numeric value allowed for `int` or `float` variables. |
-| `@pattern("regex")` | exactly 1 | Regular expression pattern required for `string` variables. |
 
 ### Rules
 - Each variable name must be unique within the state block.

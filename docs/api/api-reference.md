@@ -316,8 +316,8 @@ Exported constant defining the supported state options registry:
 import { SUPPORTED_STATE_OPTIONS } from './compiler/index.js';
 
 // Type: Record<string, { description: string, minArgs: number, maxArgs: number }>
-// Keys: 'required', 'default', 'description', 'desc', 'secret', 
-//        'persist', 'reducer', 'min', 'max', 'pattern', 'anotheroptions', 'active'
+// Keys: 'required', 'default', 'description', 'desc',
+//        'reducer', 'min', 'max', 'anotheroptions', 'active'
 ```
 
 ---
