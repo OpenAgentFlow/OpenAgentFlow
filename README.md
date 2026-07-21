@@ -17,7 +17,7 @@
 > *What OpenAPI is for REST APIs, OpenAgentFlow (`.oaf`) is for AI agent workflows.*
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="OpenAgentFlow Terminal Screencast Demo" width="800"/>
+  <video src="docs/assets/demo.mp4" autoplay loop muted playsinline width="800"></video>
 </p>
 
 ### ⚡ The 60-Second Example

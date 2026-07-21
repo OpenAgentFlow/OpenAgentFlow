@@ -3,7 +3,7 @@
 #   PowerShell: docker run --rm -v "$($PWD.Path):/vhs" -e OPENAI_API_KEY="$env:OPENAI_API_KEY" -e GOOGLE_API_KEY="$env:GOOGLE_API_KEY" vhs-ai docs/assets/demo.tape
 #   Bash/Zsh:   docker run --rm -v "${PWD}:/vhs" -e OPENAI_API_KEY -e GOOGLE_API_KEY vhs-ai docs/assets/demo.tape
 
-Output docs/assets/demo.gif
+Output docs/assets/demo.mp4
 
 # Fail early if required binaries aren't installed in the recording environment
 Require node
@@ -59,7 +59,7 @@ Enter
 
 
 # Step 4: Show execution result
-Sleep 3s
+Sleep 6s
 
 
 # Step 5: Smooth loop
