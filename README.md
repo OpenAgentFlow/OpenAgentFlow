@@ -54,14 +54,14 @@ workflow "Quick Summarize" {
 }
 ```
 
-Install the CLI globally and execute your workflow immediately (or clone our [Starter Repository](https://github.com/OpenAgentFlow/openagentflow-starter)):
+Install the CLI globally and execute your workflow immediately (or clone our [Starter Repository](https://github.com/OpenAgentFlow/OpenAgentFlow-starter)):
 ```bash
 # Option A: Save the block above to summarize.oaf and run directly
 npm install -g openagentflow
 oaf run summarize.oaf
 
 # Option B: Clone our official starter repository with pre-built workflows & inputs
-git clone https://github.com/OpenAgentFlow/openagentflow-starter.git my-agents
+git clone https://github.com/OpenAgentFlow/OpenAgentFlow-starter.git my-agents
 cd my-agents && npm run setup && npm run triage
 ```
 
@@ -88,7 +88,7 @@ The fastest way to start building executable multi-agent workflows without manua
 
 1. **Clone the Starter Project:**
    ```bash
-   git clone https://github.com/OpenAgentFlow/openagentflow-starter.git my-agents
+   git clone https://github.com/OpenAgentFlow/OpenAgentFlow-starter.git my-agents
    cd my-agents
    ```
 
