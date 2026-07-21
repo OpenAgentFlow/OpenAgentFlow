@@ -121,7 +121,7 @@ function parseArgs(args) {
       flags.set('target', args[++i] ?? '');
     } else if (arg === '--input' || arg === '-i') {
       flags.set('input', args[++i] ?? '');
-    } else if (arg === '-o') {
+    } else if (arg === '--output' || arg === '-o') {
       flags.set('output', args[++i] ?? '');
     } else if (arg === '--demo') {
       flags.set('demo', 'true');
@@ -133,6 +133,8 @@ function parseArgs(args) {
       flags.set('input', arg.split('=')[1]);
     } else if (arg.startsWith('-i=')) {
       flags.set('input', arg.split('=')[1]);
+    } else if (arg.startsWith('--output=')) {
+      flags.set('output', arg.split('=')[1]);
     } else if (arg.startsWith('-o=')) {
       flags.set('output', arg.split('=')[1]);
     } else {

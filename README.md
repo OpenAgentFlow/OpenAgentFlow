@@ -54,12 +54,15 @@ workflow "Quick Summarize" {
 }
 ```
 
-Install the CLI globally and execute your workflow immediately:
+Install the CLI globally and execute your workflow immediately (or clone our [Starter Repository](https://github.com/OpenAgentFlow/openagentflow-starter)):
 ```bash
+# Option A: Save the block above to summarize.oaf and run directly
 npm install -g openagentflow
+oaf run summarize.oaf
 
-# Run live against Gemini / OpenAI / Anthropic
-oaf run examples/summarize.oaf --input examples/summarize-input.json
+# Option B: Clone our official starter repository with pre-built workflows & inputs
+git clone https://github.com/OpenAgentFlow/openagentflow-starter.git my-agents
+cd my-agents && npm run setup && npm run triage
 ```
 
 ---
@@ -80,49 +83,72 @@ Modern AI agent frameworks (like LangGraph, AutoGen, and CrewAI) each introduce 
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
-- **Node.js** (v18+ recommended)
-- **Python** (v3.10+ recommended with `venv` if executing workflows live via `LangGraph`)
-- **VS Code Extension** ([OpenAgentFlow Support](https://marketplace.visualstudio.com/items?itemName=OpenAgentFlow.openagentflow-support) recommended for full `.oaf` syntax highlighting)
+### Option 1: Using the Starter Repository (Recommended — 60 Seconds)
+The fastest way to start building executable multi-agent workflows without manual setup or missing file errors is using our official template repository:
 
-### 2. Install the CLI
-Install OpenAgentFlow globally via `npm` (or run `npm link` inside a cloned repository):
+1. **Clone the Starter Project:**
+   ```bash
+   git clone https://github.com/OpenAgentFlow/openagentflow-starter.git my-agents
+   cd my-agents
+   ```
 
-```bash
-npm install -g openagentflow
-```
+2. **Run Automated Environment Setup:**
+   Our cross-platform setup script (`setup.js`) checks your system, creates your Python virtual environment (`venv`), installs LangGraph dependencies, and initializes your `.env` configuration automatically across Windows, macOS, and Linux:
+   ```bash
+   npm install
+   npm run setup
+   ```
 
-### 3. Set Up Python Runtime & Virtual Environment
-OpenAgentFlow compiles your DSL using Node.js, then executes it natively in a Python LangGraph environment. To run workflows live against real LLM endpoints, set up your Python environment:
+3. **Configure API Keys (`oaf auth`):**
+   Set your keys interactively via CLI (or edit the `.env` file generated in your project root):
+   ```bash
+   npx openagentflow auth
+   ```
 
-```bash
-# Create and activate Python virtual environment
-python -m venv venv
-# Windows PowerShell: .\venv\Scripts\Activate.ps1
-# macOS/Linux: source venv/bin/activate
+4. **Run Your First Workflow Live!**
+   Execute pre-built multi-agent topologies immediately:
+   ```bash
+   # Run Customer Support Triage Workflow with injected JSON state
+   npm run triage
 
-# Install LangGraph and multi-provider LangChain drivers
-pip install langgraph langchain-google-genai langchain-openai langchain-anthropic pydantic
-```
+   # Or compile directly to a LangGraph Python application
+   npm run compile-triage
+   ```
 
-### 4. Set Your API Keys (`oaf auth`)
-Configure your API keys interactively; they are stored securely with `0o600` permissions in `~/.oaf/.env`:
+---
 
-```bash
-oaf auth
-# Or set manually: export GOOGLE_API_KEY="your-key" / $env:GOOGLE_API_KEY="your-key"
-```
+### Option 2: Standalone Global CLI
+If you prefer creating workflows from scratch in your own workspace without cloning a template:
 
-### 5. Run Your First Workflow Live!
-Execute `.oaf` files directly from the command line. OpenAgentFlow parses the DSL, compiles it to LangGraph Python code, and streams live output:
+1. **Install Prerequisites & CLI:**
+   Ensure **Node.js** (v18+) and **Python** (v3.10+) are installed, then install the CLI globally:
+   ```bash
+   npm install -g openagentflow
+   ```
 
-```bash
-# Compile and execute live
-oaf run examples/hello.oaf
+2. **Set Your API Keys (`oaf auth`):**
+   Configure credentials securely in `~/.oaf/.env` (`0o600` permissions):
+   ```bash
+   oaf auth
+   # Or set manually: export GOOGLE_API_KEY="your-key" / $env:GOOGLE_API_KEY="your-key"
+   ```
 
-# Or run with initial workflow state injected from a JSON file
-oaf run examples/summarize.oaf --input data.json
-```
+3. **Set Up Python Runtime & Virtual Environment:**
+   To execute compiled `.oaf` workflows live via LangGraph against real LLM endpoints:
+   ```bash
+   # Create and activate Python virtual environment
+   python -m venv venv
+   source venv/bin/activate  # Windows PowerShell: .\venv\Scripts\Activate.ps1
+
+   # Install LangGraph and multi-provider LangChain drivers
+   pip install langgraph langchain-google-genai langchain-openai langchain-anthropic pydantic
+   ```
+
+4. **Create & Execute Workflows Live:**
+   Create a `.oaf` workflow file (e.g., `my-workflow.oaf`) along with your JSON data (`data.json`) and run:
+   ```bash
+   oaf run my-workflow.oaf --input data.json
+   ```
 
 > 📖 **For the full guide, see [Documentation](docs/index.md)**.
 
