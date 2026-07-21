@@ -97,6 +97,7 @@ The formal language specifications live in the [`spec/`](../spec/) directory:
 | Phase 2 — Compiler MVP | ✅ Complete |
 | Phase 3 — Runtime Integration | ✅ Complete |
 | Phase 4 — State Initialization | ✅ Complete |
+| Phase 4.5 — Multi-Provider, Auth & Tooling | ✅ Complete |
 | Phase 5 — Additional Adapters | 🔲 Planned |
 | Phase 6 — Developer Tooling | 🔲 Planned |
 

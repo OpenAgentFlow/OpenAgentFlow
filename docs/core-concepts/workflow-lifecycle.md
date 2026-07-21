@@ -75,7 +75,7 @@ The **Lexer** reads raw text and produces a token stream. The **Parser** consume
 ### CLI Command
 
 ```bash
-node cli/index.js parse examples/hello.oaf
+oaf parse examples/hello.oaf
 ```
 
 ---
@@ -124,7 +124,7 @@ Severity levels:
 ### CLI Command
 
 ```bash
-node cli/index.js validate examples/hello.oaf
+oaf validate examples/hello.oaf
 ```
 
 ---
@@ -151,7 +151,7 @@ The IR is:
 ### CLI Command
 
 ```bash
-node cli/index.js compile examples/hello.oaf
+oaf compile examples/hello.oaf
 # Outputs IR JSON to stdout
 ```
 
@@ -190,10 +190,10 @@ A single, self-contained Python script containing:
 
 ```bash
 # Generate Python code
-node cli/index.js compile examples/hello.oaf --target langgraph -o hello.py
+oaf compile examples/hello.oaf --target langgraph -o hello.py
 
 # Or compile and save
-node cli/index.js compile examples/hello.oaf -t langgraph -o workflow.py
+oaf compile examples/hello.oaf -t langgraph -o workflow.py
 ```
 
 ---
@@ -224,8 +224,8 @@ The **CLI runner** spawns a Python subprocess to execute the generated code.
 ### CLI Command
 
 ```bash
-node cli/index.js run examples/hello.oaf
-node cli/index.js run examples/summarize.oaf --input data.json
+oaf run examples/hello.oaf
+oaf run examples/summarize.oaf --input data.json
 ```
 
 ### Error Surface
@@ -244,14 +244,14 @@ node cli/index.js run examples/summarize.oaf --input data.json
 
 ```mermaid
 graph TD
-    A[".oaf Source File"] -->|"node cli/index.js parse"| B["Token Stream"]
+    A[".oaf Source File"] -->|"oaf parse"| B["Token Stream"]
     B --> C["AST"]
-    C -->|"node cli/index.js validate"| D{"Valid?"}
+    C -->|"oaf validate"| D{"Valid?"}
     D -->|"No"| E["Diagnostics<br/>(errors + warnings)"]
     D -->|"Yes"| F["IR (JSON)"]
-    F -->|"node cli/index.js compile"| G["Python Code"]
-    F -->|"node cli/index.js graph"| H["DOT Diagram"]
-    G -->|"node cli/index.js run"| I["Live LLM Output"]
+    F -->|"oaf compile"| G["Python Code"]
+    F -->|"oaf graph"| H["DOT Diagram"]
+    G -->|"oaf run"| I["Live LLM Output"]
 
     style A fill:#f9f
     style E fill:#fbb

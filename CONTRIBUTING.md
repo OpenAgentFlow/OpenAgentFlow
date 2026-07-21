@@ -49,6 +49,14 @@ npm test
 ```
 All 163+ tests should pass in under a second!
 
+### 🧪 Test Suite Breakdown
+1. **Core Pipeline Suites (`lexer`, `parser`, `validator`, `compiler`)**: Verifies exact tokenization, syntax tree construction, cyclic/unreachable graph diagnostics, and clean AST-to-IR compilation.
+2. **Integration & Snapshot Suites (`integration`, `snapshot`)**: Compiles all example workflows and verifies structural determinism using stored JSON snapshots. (To refresh snapshots after spec updates, run `UPDATE_SNAPSHOTS=1 npm test`).
+3. **Adapter, Env & CLI Suites (`adapter`, `env`, `cli`)**: Verifies `TypedDict` generation, `get_llm()` inclusion, multi-output JSON parsing, initial state embedding (`options.input`), 4-tier `.env` resolution, `0o600` file security, and CLI flag/error handling (`--target`, `--input`, `-o`, `auth`).
+4. **Live E2E Execution (`e2e-flow.test.js`)**:
+   - Runs `python -c "import ast; ast.parse(code)"` on generated LangGraph output to verify Python syntax prior to execution.
+   - Spawns live Python subprocesses connecting directly to **Google Gemini (`gemini-2.0-flash`)** or **OpenAI (`gpt-4`)** to execute actual `.oaf` workflows and verify state transitions in real time.
+
 ---
 
 ## 🛠️ High-Priority Contribution Area: Building Adapters (AutoGen & CrewAI)

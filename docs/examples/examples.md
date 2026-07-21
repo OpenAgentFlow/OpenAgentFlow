@@ -56,7 +56,7 @@ graph LR
 ### Run It
 
 ```bash
-node cli/index.js run examples/hello.oaf
+oaf run examples/hello.oaf
 ```
 
 ---
@@ -135,7 +135,7 @@ graph LR
 
 ```bash
 # With input data
-node cli/index.js run examples/summarize.oaf --input examples/summarize-input.json
+oaf run examples/summarize.oaf --input examples/summarize-input.json
 ```
 
 ### Input File (`summarize-input.json`)
@@ -322,7 +322,7 @@ flow {
 Always validate first to catch errors cheaply:
 
 ```bash
-node cli/index.js validate my-workflow.oaf
+oaf validate my-workflow.oaf
 ```
 
 #### 6. Test with Input Data
@@ -336,7 +336,7 @@ Create a JSON file with test data:
 ```
 
 ```bash
-node cli/index.js run my-workflow.oaf --input test-data.json
+oaf run my-workflow.oaf --input test-data.json
 ```
 
 ---

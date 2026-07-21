@@ -105,7 +105,7 @@ The adapter module transforms IR into executable Python code targeting the LangG
 
 | Entry Point | Use Case |
 |---|---|
-| `node cli/index.js` | CLI usage — the primary way users interact with OAF |
+| `oaf` (`cli/index.js`) | CLI usage — the primary way users interact with OAF |
 | `compiler/index.js` | Programmatic API — `import { Compiler } from './compiler/index.js'` |
 | `parser/index.js` | Low-level parser API — `import { Lexer, Parser } from './parser/index.js'` |
 

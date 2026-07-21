@@ -2,7 +2,7 @@
 
 Build and run your first OAF workflow in 5 minutes.
 
-> **Prerequisites:** Make sure you've completed the [Installation](installation.md) guide first.
+> **Prerequisites:** Make sure you've completed the [Installation](installation.md) guide and installed the CLI globally (`npm install -g openagentflow`). Note that OpenAgentFlow compiles your DSL using Node.js, then executes it natively in a Python LangGraph environment when running live workflows (`oaf run`).
 
 ---
 
@@ -39,7 +39,7 @@ This defines:
 Verify the syntax by parsing the file into an AST:
 
 ```bash
-node cli/index.js parse my-first.oaf
+oaf parse my-first.oaf
 ```
 
 You'll see JSON output representing the Abstract Syntax Tree — this confirms the syntax is valid.
@@ -49,7 +49,7 @@ You'll see JSON output representing the Abstract Syntax Tree — this confirms t
 Run semantic validation to check for structural issues:
 
 ```bash
-node cli/index.js validate my-first.oaf
+oaf validate my-first.oaf
 ```
 
 Expected output:
@@ -62,7 +62,7 @@ Expected output:
 Generate the Intermediate Representation (a runtime-independent JSON format):
 
 ```bash
-node cli/index.js compile my-first.oaf
+oaf compile my-first.oaf
 ```
 
 This outputs the IR JSON, which captures the fully validated meaning of your workflow.
@@ -72,7 +72,7 @@ This outputs the IR JSON, which captures the fully validated meaning of your wor
 Execute the workflow against a real LLM:
 
 ```bash
-node cli/index.js run my-first.oaf
+oaf run my-first.oaf
 ```
 
 The CLI will:
@@ -141,7 +141,7 @@ workflow "Article Summarizer" {
 Run it:
 
 ```bash
-node cli/index.js run summarizer.oaf
+oaf run summarizer.oaf
 ```
 
 ---
@@ -163,7 +163,7 @@ Create `article-data.json`:
 ### Run With Input
 
 ```bash
-node cli/index.js run summarizer.oaf --input article-data.json
+oaf run summarizer.oaf --input article-data.json
 ```
 
 The `article` state variable is now pre-populated with your text, and the agents will process it through the pipeline.
@@ -175,7 +175,7 @@ The `article` state variable is now pre-populated with your text, and the agents
 Generate a Graphviz DOT diagram of any workflow:
 
 ```bash
-node cli/index.js graph summarizer.oaf
+oaf graph summarizer.oaf
 ```
 
 Output:
@@ -206,7 +206,7 @@ Paste this into any Graphviz renderer (like [Graphviz Online](https://dreampuf.g
 Save the generated LangGraph Python code to a file:
 
 ```bash
-node cli/index.js compile summarizer.oaf --target langgraph -o summarizer.py
+oaf compile summarizer.oaf --target langgraph -o summarizer.py
 ```
 
 This produces a self-contained Python script that you can run independently:

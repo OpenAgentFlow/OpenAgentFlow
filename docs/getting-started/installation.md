@@ -16,11 +16,20 @@ This guide walks you through setting up OpenAgentFlow from scratch.
 
 ---
 
-## 1. Clone the Repository
+## 1. Install the CLI
+
+Install OpenAgentFlow globally using `npm` to make the `oaf` command available everywhere:
+
+```bash
+npm install -g openagentflow
+```
+
+Alternatively, if developing or modifying the compiler locally, clone the repository and link it:
 
 ```bash
 git clone https://github.com/OpenAgentFlow/OpenAgentFlow.git
 cd OpenAgentFlow
+npm link
 ```
 
 ---
@@ -38,7 +47,7 @@ If you don't have Node.js, install it from [nodejs.org](https://nodejs.org/).
 
 ## 3. Set Up the Python Runtime
 
-The Python runtime is required only if you want to **execute** workflows live (using the `oaf run` command). It is not needed for parsing, validation, or IR compilation.
+OpenAgentFlow compiles your DSL using Node.js, then executes it natively in a Python LangGraph environment. To run workflows live against real LLM endpoints (`oaf run`), set up your Python environment:
 
 ### Create a Virtual Environment
 
@@ -81,8 +90,7 @@ OpenAgentFlow supports three LLM providers (**Gemini**, **OpenAI**, and **Anthro
 The easiest way to configure your API keys across any machine is using the interactive `oaf auth` utility, which stores them securely with `0o600` permissions inside `~/.oaf/.env`:
 
 ```bash
-node cli/index.js auth
-# Or if installed globally: oaf auth
+oaf auth
 ```
 
 ### Option B: Manual Environment Variables
@@ -142,17 +150,17 @@ You should see **163 tests passing** across 10 test files.
 ### Check the CLI
 
 ```bash
-node cli/index.js --version
+oaf --version
 # Expected: 0.1.0
 
-node cli/index.js --help
+oaf --help
 # Shows all available commands
 ```
 
 ### Parse a Sample Workflow
 
 ```bash
-node cli/index.js parse examples/hello.oaf
+oaf parse examples/hello.oaf
 ```
 
 If you see the AST output as JSON, the compiler is working correctly.
@@ -160,7 +168,7 @@ If you see the AST output as JSON, the compiler is working correctly.
 ### Run a Live Workflow (requires API key)
 
 ```bash
-node cli/index.js run examples/hello.oaf
+oaf run examples/hello.oaf
 ```
 
 If this produces LLM output, your full stack is configured and ready.

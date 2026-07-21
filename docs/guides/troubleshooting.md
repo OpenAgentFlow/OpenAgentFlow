@@ -12,7 +12,7 @@ If something isn't working, check these first:
 2. **Python version:** `python --version` → must be 3.10+
 3. **Python packages:** `pip list | grep langgraph` → must be installed
 4. **API keys:** `echo $GOOGLE_API_KEY` or `echo $env:GOOGLE_API_KEY` → must be set
-5. **Workflow validity:** `node cli/index.js validate your-file.oaf` → must pass
+5. **Workflow validity:** `oaf validate your-file.oaf` → must pass
 
 ---
 
@@ -26,7 +26,7 @@ If something isn't working, check these first:
 
 **Fix:**
 ```bash
-node cli/index.js run examples/hello.oaf  # Add the file path
+oaf run examples/hello.oaf  # Add the file path
 ```
 
 ---
@@ -45,7 +45,7 @@ node cli/index.js run examples/hello.oaf  # Add the file path
 
 **Fix:** Check the file path. Use absolute paths if unsure:
 ```bash
-node cli/index.js validate C:\path\to\workflow.oaf
+oaf validate C:\path\to\workflow.oaf
 ```
 
 ---
@@ -56,7 +56,7 @@ node cli/index.js validate C:\path\to\workflow.oaf
 
 **Fix:** Use `ir` (default for `compile`) or `langgraph`:
 ```bash
-node cli/index.js compile file.oaf --target langgraph
+oaf compile file.oaf --target langgraph
 ```
 
 ---
@@ -67,7 +67,7 @@ node cli/index.js compile file.oaf --target langgraph
 
 **Fix:** The `run` command only supports `langgraph`:
 ```bash
-node cli/index.js run file.oaf  # Defaults to langgraph
+oaf run file.oaf  # Defaults to langgraph
 ```
 
 ---
@@ -443,9 +443,9 @@ In the `spec/` directory:
 
 ## Getting Help
 
-1. **Validate first:** `node cli/index.js validate your-file.oaf`
-2. **Check the graph:** `node cli/index.js graph your-file.oaf`
-3. **Inspect generated code:** `node cli/index.js compile your-file.oaf -t langgraph`
+1. **Validate first:** `oaf validate your-file.oaf`
+2. **Check the graph:** `oaf graph your-file.oaf`
+3. **Inspect generated code:** `oaf compile your-file.oaf -t langgraph`
 4. **Review the tests:** The test suite (`tests/`) demonstrates expected behavior for every feature
 
 ---

@@ -268,7 +268,7 @@ state {
 Always validate first — it's instant and free:
 
 ```bash
-node cli/index.js validate my-workflow.oaf
+oaf validate my-workflow.oaf
 ```
 
 ### Test with Small Inputs
@@ -286,7 +286,7 @@ Start with minimal test data to verify the pipeline works:
 Inspect the generated Python before running:
 
 ```bash
-node cli/index.js compile my-workflow.oaf -t langgraph -o preview.py
+oaf compile my-workflow.oaf -t langgraph -o preview.py
 ```
 
 Check that:
@@ -299,7 +299,7 @@ Check that:
 If you modify a workflow, compile to IR and compare against previous output:
 
 ```bash
-node cli/index.js compile my-workflow.oaf > new-ir.json
+oaf compile my-workflow.oaf > new-ir.json
 diff old-ir.json new-ir.json
 ```
 
@@ -331,7 +331,7 @@ Warnings don't block compilation but often indicate real problems:
 If flow validation fails, visualize the graph to understand the topology:
 
 ```bash
-node cli/index.js graph my-workflow.oaf
+oaf graph my-workflow.oaf
 ```
 
 ---
@@ -360,7 +360,7 @@ my-project/
 Don't rely on `run` for production use. Compile to Python files and manage them like any other code:
 
 ```bash
-node cli/index.js compile workflow.oaf -t langgraph -o workflow.py
+oaf compile workflow.oaf -t langgraph -o workflow.py
 # Then deploy workflow.py alongside your Python application
 ```
 

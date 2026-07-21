@@ -180,8 +180,8 @@ graph LR
 Pass `--input` during `compile` or `run`:
 
 ```bash
-node cli/index.js compile file.oaf -t langgraph -i data.json -o output.py
-node cli/index.js run file.oaf --input data.json
+oaf compile file.oaf -t langgraph -i data.json -o output.py
+oaf run file.oaf --input data.json
 ```
 
 The JSON values are embedded directly in the generated Python code as initial state.

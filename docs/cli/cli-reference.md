@@ -7,12 +7,6 @@ Complete reference for the OpenAgentFlow command-line interface.
 ## Usage
 
 ```bash
-node cli/index.js <command> [options] <file.oaf>
-```
-
-Or if installed globally via npm:
-
-```bash
 oaf <command> [options] <file.oaf>
 ```
 
@@ -25,12 +19,12 @@ oaf <command> [options] <file.oaf>
 Tokenize and parse a `.oaf` file, outputting the AST as JSON.
 
 ```bash
-node cli/index.js parse <file.oaf>
+oaf parse <file.oaf>
 ```
 
 **Example:**
 ```bash
-node cli/index.js parse examples/hello.oaf
+oaf parse examples/hello.oaf
 ```
 
 **Output:** JSON representation of the Abstract Syntax Tree.
@@ -44,12 +38,12 @@ node cli/index.js parse examples/hello.oaf
 Parse and run semantic validation (3-phase) on a `.oaf` file.
 
 ```bash
-node cli/index.js validate <file.oaf>
+oaf validate <file.oaf>
 ```
 
 **Example:**
 ```bash
-node cli/index.js validate examples/summarize.oaf
+oaf validate examples/summarize.oaf
 ```
 
 **Success output:**
@@ -81,7 +75,7 @@ node cli/index.js validate examples/summarize.oaf
 Full compilation pipeline: parse → validate → generate output.
 
 ```bash
-node cli/index.js compile <file.oaf> [--target <target>] [-o <output>] [--input <json>]
+oaf compile <file.oaf> [--target <target>] [-o <output>] [--input <json>]
 ```
 
 **Options:**
@@ -96,16 +90,16 @@ node cli/index.js compile <file.oaf> [--target <target>] [-o <output>] [--input 
 
 ```bash
 # Compile to IR JSON (default)
-node cli/index.js compile examples/hello.oaf
+oaf compile examples/hello.oaf
 
 # Compile to LangGraph Python
-node cli/index.js compile examples/hello.oaf --target langgraph
+oaf compile examples/hello.oaf --target langgraph
 
 # Save compiled output to file
-node cli/index.js compile examples/hello.oaf -t langgraph -o hello.py
+oaf compile examples/hello.oaf -t langgraph -o hello.py
 
 # Embed initial state values
-node cli/index.js compile examples/summarize.oaf -t langgraph -i data.json -o summarize.py
+oaf compile examples/summarize.oaf -t langgraph -i data.json -o summarize.py
 ```
 
 **Output:**
@@ -119,7 +113,7 @@ node cli/index.js compile examples/summarize.oaf -t langgraph -i data.json -o su
 Compile to a runtime target and immediately execute via Python subprocess.
 
 ```bash
-node cli/index.js run <file.oaf> [--target <target>] [--input <json>]
+oaf run <file.oaf> [--target <target>] [--input <json>]
 ```
 
 **Options:**
@@ -133,10 +127,10 @@ node cli/index.js run <file.oaf> [--target <target>] [--input <json>]
 
 ```bash
 # Run with default settings (auto-detects provider)
-node cli/index.js run examples/hello.oaf
+oaf run examples/hello.oaf
 
 # Run with initial state data
-node cli/index.js run examples/summarize.oaf --input examples/summarize-input.json
+oaf run examples/summarize.oaf --input examples/summarize-input.json
 
 ```
 
@@ -161,12 +155,12 @@ node cli/index.js run examples/summarize.oaf --input examples/summarize-input.js
 Generate a Graphviz DOT diagram of the workflow topology.
 
 ```bash
-node cli/index.js graph <file.oaf>
+oaf graph <file.oaf>
 ```
 
 **Example:**
 ```bash
-node cli/index.js graph examples/software-dev.oaf
+oaf graph examples/software-dev.oaf
 ```
 
 **Output:**
@@ -200,11 +194,6 @@ digraph workflow {
 Interactive utility to configure LLM API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`) and store them in the global configuration store at `~/.oaf/.env`.
 
 ```bash
-node cli/index.js auth
-```
-
-**Example:**
-```bash
 oaf auth
 ```
 
@@ -230,12 +219,12 @@ Flags accept both `--flag value` and `--flag=value` forms:
 
 ```bash
 # Both are equivalent
-node cli/index.js compile file.oaf --target langgraph
-node cli/index.js compile file.oaf --target=langgraph
+oaf compile file.oaf --target langgraph
+oaf compile file.oaf --target=langgraph
 
 # Short forms
-node cli/index.js compile file.oaf -t langgraph
-node cli/index.js run file.oaf -i data.json
+oaf compile file.oaf -t langgraph
+oaf run file.oaf -i data.json
 ```
 
 ---
@@ -328,31 +317,31 @@ The CLI provides hints for common Python-side errors:
 
 ```bash
 # 1. Check the CLI is working
-node cli/index.js --version
+oaf --version
 # 0.1.0
 
 # 2. Parse a workflow
-node cli/index.js parse examples/hello.oaf
+oaf parse examples/hello.oaf
 # Outputs AST JSON
 
 # 3. Validate it
-node cli/index.js validate examples/hello.oaf
+oaf validate examples/hello.oaf
 # ✓ hello.oaf is valid.
 
 # 4. Compile to IR
-node cli/index.js compile examples/hello.oaf
+oaf compile examples/hello.oaf
 # Outputs IR JSON
 
 # 5. Compile to Python
-node cli/index.js compile examples/hello.oaf -t langgraph -o hello.py
+oaf compile examples/hello.oaf -t langgraph -o hello.py
 # ✓ Compiled hello.oaf → hello.py (target: langgraph)
 
 # 6. Visualize the graph
-node cli/index.js graph examples/hello.oaf
+oaf graph examples/hello.oaf
 # Outputs DOT format
 
 # 7. Run live
-node cli/index.js run examples/hello.oaf
+oaf run examples/hello.oaf
 # ✓ Compiled hello.oaf (target: langgraph)
 # ▶ Executing workflow via Python subprocess...
 # ... LLM output ...
