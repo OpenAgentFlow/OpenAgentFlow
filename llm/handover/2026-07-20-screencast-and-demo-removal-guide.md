@@ -53,7 +53,7 @@ RUN pip3 install --no-cache-dir --break-system-packages \
 EOF
 ```
 
-### Step 2: Record the Screencast (`demo.tape` -> `demo.mp4`)
+### Step 2: Record the Screencast (`demo.tape` -> `demo.gif`)
 Run the next command to mount the current workspace into `/vhs` and execute the tape recording:
 
 **On Windows (PowerShell):**

@@ -7,7 +7,7 @@
 > *What OpenAPI is for REST APIs, OpenAgentFlow (`.oaf`) is for AI agent workflows.*
 
 <p align="center">
-  <video src="assets/demo.mp4" autoplay loop muted playsinline width="800"></video>
+  <img src="assets/demo.gif" alt="OpenAgentFlow Demo" width="800"/>
 </p>
 
 Welcome to the OpenAgentFlow documentation. OpenAgentFlow is an open, portable specification and compiler for defining executable multi-agent AI workflows using a clean, human-readable text format.
