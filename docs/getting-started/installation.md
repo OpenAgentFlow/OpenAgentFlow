@@ -24,7 +24,15 @@ Install OpenAgentFlow globally using `npm` to make the `oaf` command available e
 npm install -g openagentflow
 ```
 
-Alternatively, if developing or modifying the compiler locally, clone the repository and link it:
+### Option B: Clone the Official Starter Project (Fastest Setup)
+To skip manual environment configuration, clone our official starter template (`OpenAgentFlow-starter`), which includes automated setup scripts (`setup.js`) for Python venv, dependencies, and `.env` initialization:
+
+```bash
+git clone https://github.com/OpenAgentFlow/OpenAgentFlow-starter.git my-agents
+cd my-agents && npm run setup
+```
+
+Alternatively, if developing or modifying the compiler itself locally, clone the main repository and link it:
 
 ```bash
 git clone https://github.com/OpenAgentFlow/OpenAgentFlow.git

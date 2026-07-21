@@ -8,7 +8,19 @@ Build and run your first OpenAgentFlow workflow in 5 minutes.
 
 ## Your First Workflow
 
-### Step 1: Create a `.oaf` File
+### Option 1: Using the Starter Repository (Recommended — 60 Seconds)
+The fastest way to get started without manual scaffolding or environment setup is cloning our official template repository (`OpenAgentFlow-starter`), which includes pre-built `.oaf` workflows, sample JSON datasets, and automated setup scripts (`setup.js`):
+
+```bash
+git clone https://github.com/OpenAgentFlow/OpenAgentFlow-starter.git my-agents
+cd my-agents
+npm run setup   # Auto-creates Python venv, installs dependencies, & initializes .env
+npm run triage  # Executes our pre-built customer support triage workflow live
+```
+
+### Option 2: Building From Scratch
+
+#### Step 1: Create a `.oaf` File
 
 Create a file called `my-first.oaf`:
 

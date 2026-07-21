@@ -20,6 +20,7 @@ New to OpenAgentFlow? Start here:
 
 - **[Installation](getting-started/installation.md)** — Set up Node.js, Python, and API keys
 - **[Quick Start](getting-started/quick-start.md)** — Create and run your first workflow in 5 minutes
+- **[Official Starter Repository](https://github.com/OpenAgentFlow/OpenAgentFlow-starter)** — Clone our template (`git clone https://github.com/OpenAgentFlow/OpenAgentFlow-starter.git`) for instant, zero-config workflow execution
 
 ---
 
