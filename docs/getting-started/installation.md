@@ -8,11 +8,11 @@ This guide walks you through setting up OpenAgentFlow from scratch.
 
 | Requirement | Version | Purpose |
 |---|---|---|
-| **Node.js** | v18.0.0+ | Runs the OAF compiler (lexer, parser, validator, IR generator) |
+| **Node.js** | v18.0.0+ | Runs the OpenAgentFlow compiler (lexer, parser, validator, IR generator) |
 | **Python** | v3.10+ | Executes compiled LangGraph workflows |
 | **pip** | Latest | Installs Python runtime dependencies |
 
-> **Note:** The OAF compiler itself has **zero npm dependencies**. It runs on pure Node.js with no `node_modules` required.
+> **Note:** The OpenAgentFlow compiler itself has **zero npm dependencies**. It runs on pure Node.js with no `node_modules` required.
 
 ---
 
@@ -127,7 +127,7 @@ OpenAgentFlow automatically loads variables using a **4-tier hierarchy** (highes
 
 ### Provider Priority & Inference
 
-When executing a workflow, OAF selects the provider for each agent in this exact order:
+When executing a workflow, OpenAgentFlow selects the provider for each agent in this exact order:
 1. **Explicit `provider` property** on the agent (`provider: "gemini"`, `"openai"`, or `"anthropic"`)
 2. **Model prefix inference**:
    - `gemini-*`, `gemma-*` → `"gemini"`

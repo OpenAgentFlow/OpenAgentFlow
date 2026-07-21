@@ -1,6 +1,6 @@
 # Quick Start
 
-Build and run your first OAF workflow in 5 minutes.
+Build and run your first OpenAgentFlow workflow in 5 minutes.
 
 > **Prerequisites:** Make sure you've completed the [Installation](installation.md) guide and installed the CLI globally (`npm install -g openagentflow`). Note that OpenAgentFlow compiles your DSL using Node.js, then executes it natively in a Python LangGraph environment when running live workflows (`oaf run`).
 
@@ -219,7 +219,7 @@ python summarizer.py --input article-data.json
 
 ## The Pipeline at a Glance
 
-Every OAF command follows this pipeline:
+Every OpenAgentFlow command follows this pipeline:
 
 ```
 ┌─────────────┐     ┌───────────┐     ┌──────────┐     ┌───────────┐
@@ -246,4 +246,4 @@ Every OAF command follows this pipeline:
 - **[The `.oaf` Language](../language/oaf-language.md)** — Learn every syntax feature
 - **[Examples](../examples/examples.md)** — Walk through all built-in examples
 - **[CLI Reference](../cli/cli-reference.md)** — All commands and flags
-- **[Architecture](../core-concepts/architecture.md)** — Understand how OAF works internally
+- **[Architecture](../core-concepts/architecture.md)** — Understand how OpenAgentFlow works internally

@@ -10,7 +10,7 @@ This page explains the design philosophy, compilation pipeline, and module archi
 
 ## What Is OpenAgentFlow?
 
-OpenAgentFlow (OAF) is a **domain-specific language and compiler** for defining portable AI agent workflows. Think of it as what OpenAPI is for REST APIs — a neutral, human-readable specification format that separates workflow *definition* from *execution*.
+OpenAgentFlow (OpenAgentFlow) is a **domain-specific language and compiler** for defining portable AI agent workflows. Think of it as what OpenAPI is for REST APIs — a neutral, human-readable specification format that separates workflow *definition* from *execution*.
 
 ### The Problem
 
@@ -22,7 +22,7 @@ Modern AI agent frameworks (LangGraph, AutoGen, CrewAI) each have:
 
 ### The Solution
 
-OAF provides:
+OpenAgentFlow provides:
 - A **clean `.oaf` text format** for defining multi-agent workflows
 - A **zero-dependency compiler** that validates and transforms workflows
 - **Runtime adapters** that generate framework-specific code (currently LangGraph)
@@ -44,7 +44,7 @@ OAF provides:
 
 ## Compilation Pipeline
 
-The OAF compiler transforms source code through a series of well-defined stages:
+The OpenAgentFlow compiler transforms source code through a series of well-defined stages:
 
 ```mermaid
 graph LR
@@ -208,7 +208,7 @@ The Intermediate Representation decouples parsing from code generation:
 - Multiple adapters can consume the same IR (LangGraph today, AutoGen/CrewAI planned)
 
 ### Why Compile to Python?
-LangGraph, the primary runtime target, is a Python framework. OAF generates self-contained Python scripts that:
+LangGraph, the primary runtime target, is a Python framework. OpenAgentFlow generates self-contained Python scripts that:
 - Include all state definitions, agent functions, and graph construction
 - Auto-detect LLM providers at runtime
 - Support runtime state injection via `--input` or `OAF_INPUT_FILE`

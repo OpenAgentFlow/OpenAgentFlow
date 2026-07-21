@@ -1,6 +1,6 @@
 # Best Practices
 
-Design patterns, tips, and guidelines for building effective OAF workflows.
+Design patterns, tips, and guidelines for building effective OpenAgentFlow workflows.
 
 ---
 

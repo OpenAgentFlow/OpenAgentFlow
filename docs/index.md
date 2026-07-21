@@ -10,13 +10,13 @@
   <img src="assets/demo.gif" alt="OpenAgentFlow Terminal Screencast Demo" width="800"/>
 </p>
 
-Welcome to the OpenAgentFlow documentation. OAF is an open, portable specification and compiler for defining executable multi-agent AI workflows using a clean, human-readable text format.
+Welcome to the OpenAgentFlow documentation. OpenAgentFlow is an open, portable specification and compiler for defining executable multi-agent AI workflows using a clean, human-readable text format.
 
 ---
 
 ## Getting Started
 
-New to OAF? Start here:
+New to OpenAgentFlow? Start here:
 
 - **[Installation](getting-started/installation.md)** — Set up Node.js, Python, and API keys
 - **[Quick Start](getting-started/quick-start.md)** — Create and run your first workflow in 5 minutes
@@ -25,7 +25,7 @@ New to OAF? Start here:
 
 ## Core Concepts
 
-Understand how OAF works under the hood:
+Understand how OpenAgentFlow works under the hood:
 
 - **[Architecture](core-concepts/architecture.md)** — Pipeline overview, design principles, and module map
 - **[Project Structure](core-concepts/project-structure.md)** — Directory layout and entry points

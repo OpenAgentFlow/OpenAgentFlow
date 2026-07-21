@@ -1,6 +1,6 @@
 # Workflow Lifecycle
 
-This page traces the complete journey of an OAF workflow — from authoring a `.oaf` file to receiving live LLM output.
+This page traces the complete journey of an OpenAgentFlow workflow — from authoring a `.oaf` file to receiving live LLM output.
 
 ---
 

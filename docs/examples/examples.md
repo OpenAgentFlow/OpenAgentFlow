@@ -1,12 +1,12 @@
 # Examples & Tutorials
 
-This page walks through every built-in OAF example and teaches you to build your own workflows.
+This page walks through every built-in OpenAgentFlow example and teaches you to build your own workflows.
 
 ---
 
 ## Built-In Examples
 
-OAF ships with four example workflows of increasing complexity:
+OpenAgentFlow ships with four example workflows of increasing complexity:
 
 | Example | Agents | Features |
 |---|---|---|
@@ -20,7 +20,7 @@ OAF ships with four example workflows of increasing complexity:
 
 **File:** `examples/hello.oaf`
 
-The simplest possible OAF workflow: one agent, no state.
+The simplest possible OpenAgentFlow workflow: one agent, no state.
 
 ```oaf
 // Minimal workflow: single agent, no state

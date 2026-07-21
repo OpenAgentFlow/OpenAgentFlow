@@ -22,7 +22,7 @@ OpenAgentFlow resolves environment variables using a 4-tier resolution hierarchy
 1. **Inline CLI overrides:** `OPENAI_API_KEY=sk-... oaf run summarize.oaf`
 2. **Local Project `.env`:** An `.env` file located in the same directory as the `.oaf` file being executed or compiled.
 3. **System Environment Variables:** Standard system environment variables set in the shell (`export KEY=val` or `$env:KEY = "val"`).
-4. **Global OAF Store (`~/.oaf/.env`):** Global user configuration baseline.
+4. **Global OpenAgentFlow Store (`~/.oaf/.env`):** Global user configuration baseline.
 
 When compiling or running a workflow, `oaf` automatically loads local and global `.env` files into the runtime environment without overwriting variables that are already set by higher-priority tiers.
 
@@ -60,7 +60,7 @@ export OAF_DEFAULT_MODEL="claude-3-5-sonnet-20241022"
 
 ### Multi-Provider System
 
-OAF supports three leading LLM providers: **Gemini**, **OpenAI**, and **Anthropic**. The compiler and generated Python runtime auto-detect which provider to use based on model names and available API keys.
+OpenAgentFlow supports three leading LLM providers: **Gemini**, **OpenAI**, and **Anthropic**. The compiler and generated Python runtime auto-detect which provider to use based on model names and available API keys.
 
 ```mermaid
 graph TD
@@ -75,7 +75,7 @@ graph TD
 ### Provider Priority & Inference
 
 1. **Per-agent `provider` property** — if explicitly set (`provider: "anthropic"`, `"gemini"`, or `"openai"`), takes absolute priority.
-2. **Automatic Model Prefix Inference** — if `provider` is omitted, OAF infers the provider from the `model` string prefix:
+2. **Automatic Model Prefix Inference** — if `provider` is omitted, OpenAgentFlow infers the provider from the `model` string prefix:
    - `claude-*` → `"anthropic"`
    - `gpt-*`, `o1`, `o3` → `"openai"`
    - `gemini-*`, `gemma-*` → `"gemini"`
@@ -169,7 +169,7 @@ You can inject initial state values into a workflow at compile time or runtime.
 
 ```mermaid
 graph LR
-    A["data.json"] -->|"--input"| B["OAF CLI"]
+    A["data.json"] -->|"--input"| B["OpenAgentFlow CLI"]
     B -->|"Compile time"| C["Embedded in Python"]
     A -->|"Runtime --input"| D["Read at execution"]
     E["OAF_INPUT_FILE"] -->|"Env var"| D
@@ -281,7 +281,7 @@ The CLI auto-detects the Python executable in this order:
 
 ## Configuration Checklist
 
-For a fully working OAF setup:
+For a fully working OpenAgentFlow setup:
 
 - [ ] Node.js v18+ installed
 - [ ] Python 3.10+ installed (for `run` command)

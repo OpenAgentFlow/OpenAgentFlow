@@ -247,7 +247,7 @@ OpenAgentFlow resolves configuration using a 4-tier hierarchy (highest to lowest
 1. **Inline CLI overrides:** `OPENAI_API_KEY=sk-... oaf run workflow.oaf`
 2. **Local Project `.env`:** Located alongside the target `.oaf` file.
 3. **System Environment Variables:** Set directly in the shell environment.
-4. **Global OAF Store (`~/.oaf/.env`):** Global user credentials managed by `oaf auth`.
+4. **Global OpenAgentFlow Store (`~/.oaf/.env`):** Global user credentials managed by `oaf auth`.
 
 ### Provider Priority & Inference
 

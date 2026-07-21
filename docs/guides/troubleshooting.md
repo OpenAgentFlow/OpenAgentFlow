@@ -391,7 +391,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 ## FAQ
 
-### Can I use OAF without Python?
+### Can I use OpenAgentFlow without Python?
 
 **Partially.** The compiler (parse, validate, compile to IR) runs entirely in Node.js with zero dependencies. You only need Python to **execute** compiled workflows via `oaf run` or by running the generated Python scripts.
 
@@ -405,7 +405,7 @@ model: "gpt-4o"
 model: "gpt-3.5-turbo"
 ```
 
-### Does OAF support parallel agent execution?
+### Does OpenAgentFlow support parallel agent execution?
 
 **Not in v0.1.** All agents execute sequentially in topological order. True parallel execution (fork/join) is planned for a future version.
 
@@ -419,9 +419,9 @@ model: "gpt-3.5-turbo"
 UPDATE_SNAPSHOTS=1 npm test
 ```
 
-### Can I use OAF in production?
+### Can I use OpenAgentFlow in production?
 
-OAF is currently at v0.1.0. The compiler and language spec are stable for linear and fan-out DAG workflows. For production use, compile to Python files and manage them like any other code — don't depend on `oaf run` in production.
+OpenAgentFlow is currently at v0.1.0. The compiler and language spec are stable for linear and fan-out DAG workflows. For production use, compile to Python files and manage them like any other code — don't depend on `oaf run` in production.
 
 ### How do I add a new adapter?
 

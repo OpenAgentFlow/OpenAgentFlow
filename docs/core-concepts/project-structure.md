@@ -1,6 +1,6 @@
 # Project Structure
 
-This page explains the directory layout, module responsibilities, and entry points of the OAF codebase.
+This page explains the directory layout, module responsibilities, and entry points of the OpenAgentFlow codebase.
 
 ---
 
