@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/oaf-logo.svg" alt="OpenAgentFlow Logo" width="160"/>
+  <img src="https://raw.githubusercontent.com/OpenAgentFlow/OpenAgentFlow/master/docs/assets/oaf-logo.svg" alt="OpenAgentFlow Logo" width="160"/>
 </p>
 
 # OpenAgentFlow
@@ -11,13 +11,13 @@
 [![Target Runtime: LangGraph](https://img.shields.io/badge/runtime-LangGraph%20Python-orange.svg)](#multi-llm--runtime-integration)
 [![LLM Providers: Gemini | OpenAI | Anthropic](https://img.shields.io/badge/LLMs-Gemini%20%7C%20OpenAI%20%7C%20Anthropic-purple.svg)](#multi-llm--runtime-integration)
 [![VS Code Extension](https://img.shields.io/badge/VS%20Code-Syntax%20Support-007ACC.svg?logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=OpenAgentFlow.openagentflow-support)
-[![Documentation](https://img.shields.io/badge/docs-complete-blue.svg)](docs/index.md)
+[![Documentation](https://img.shields.io/badge/docs-complete-blue.svg)](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/index.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > *What OpenAPI is for REST APIs, OpenAgentFlow (`.oaf`) is for AI agent workflows.*
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="OpenAgentFlow Demo" width="800"/>
+  <img src="https://raw.githubusercontent.com/OpenAgentFlow/OpenAgentFlow/master/docs/assets/demo.gif" alt="OpenAgentFlow Demo" width="800"/>
 </p>
 
 ### ⚡ The 60-Second Example
@@ -150,16 +150,16 @@ If you prefer creating workflows from scratch in your own workspace without clon
    oaf run my-workflow.oaf --input data.json
    ```
 
-> 📖 **For the full guide, see [Documentation](docs/index.md)**.
+> 📖 **For the full guide, see [Documentation](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/index.md)**.
 
 ---
 
 ## 📖 Documentation
 
-The complete documentation is available in the `docs/` directory, including:
-* **[Language Reference](docs/language/oaf-language.md):** Complete `.oaf` syntax.
-* **[Formal Specs](spec/SPEC.md):** EBNF grammar, semantic rules, and IR schema.
-* **[API & CLI Ref](docs/cli/cli-reference.md):** Programmatic API and command-line flags.
+The complete documentation is available in our GitHub `docs/` directory, including:
+* **[Language Reference](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/language/oaf-language.md):** Complete `.oaf` syntax.
+* **[Formal Specs](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/spec/SPEC.md):** EBNF grammar, semantic rules, and IR schema.
+* **[API & CLI Ref](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/cli/cli-reference.md):** Programmatic API and command-line flags.
 
 ---
 
@@ -253,7 +253,7 @@ When compiling to LangGraph, the runtime automatically manages providers. You ca
 
 ## 🤝 Contributing
 
-We welcome contributions from developers, researchers, and engineers! Whether you want to pick up a [`good first issue`](https://github.com/OpenAgentFlow/openagentflow/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), help build our planned Phase 5 target adapters (**Microsoft AutoGen** or **CrewAI**), or propose language enhancements, please check out our detailed [Contributing Guide](CONTRIBUTING.md) to get started.
+We welcome contributions from developers, researchers, and engineers! Whether you want to pick up a [`good first issue`](https://github.com/OpenAgentFlow/openagentflow/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), help build our planned Phase 5 target adapters (**Microsoft AutoGen** or **CrewAI**), or propose language enhancements, please check out our detailed [Contributing Guide](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/CONTRIBUTING.md) to get started.
 
 ---
 
