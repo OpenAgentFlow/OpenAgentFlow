@@ -1,43 +1,28 @@
-// Summarize workflow: analyze text then produce a summary
-workflow "Summarize" {
-
+workflow "Quick Summarize" {
+    
     state {
-        request: string 
-        source_text: string @required 
-        key_points: list[string]
+        source_text: string @required
+        extracted_points: string
         summary: string
     }
 
-    agent Analyst {
-        instructions: """
-        Analyze the request and source text.
-        Identify the most important facts, themes, and action items.
-        Produce concise key_points only.
-        """
-        inputs: [request, source_text]
-        outputs: [key_points]
-        model: "gemma-4-26b-a4b-it"
+    agent Extractor {
+        instructions: "Read the `source_text` and extract the most important facts into a concise bulleted list."
+        model: "gemini-2.0-flash"
+        inputs: [source_text]
+        outputs: [extracted_points]
     }
 
-    agent Writer {
-        instructions: """
-        Use the key_points to write a clear, concise summary.
-        Preserve meaning, remove redundancy, and match the requested tone.
-        """
-        inputs: [key_points]
+    agent Synthesizer {
+        instructions: "Take the extracted points and weave them into a clear, cohesive summary paragraph."
+        model: "gpt-4o"
+        inputs: [extracted_points]
         outputs: [summary]
-        model: "gemma-4-26b-a4b-it"
     }
 
     flow {
-        start -> Analyst
-        Analyst -> Writer
-        Writer -> end
+        start -> Extractor 
+        Extractor -> Synthesizer
+        Synthesizer -> end
     }
-
-    config {
-        version: "0.1"
-        runtime: "langgraph"
-    }
-
-}
+} 

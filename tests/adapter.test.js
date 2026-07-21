@@ -399,13 +399,13 @@ describe('LangGraph Adapter', () => {
 
       // Verify key structural elements
       assert.ok(code.includes('class WorkflowState(TypedDict'));
-      assert.ok(code.includes('def analyst_node('));
-      assert.ok(code.includes('def writer_node('));
-      assert.ok(code.includes('graph.add_node("Analyst"'));
-      assert.ok(code.includes('graph.add_node("Writer"'));
-      assert.ok(code.includes('graph.set_entry_point("Analyst")'));
-      assert.ok(code.includes('graph.add_edge("Analyst", "Writer")'));
-      assert.ok(code.includes('graph.add_edge("Writer", END)'));
+      assert.ok(code.includes('def extractor_node('));
+      assert.ok(code.includes('def synthesizer_node('));
+      assert.ok(code.includes('graph.add_node("Extractor"'));
+      assert.ok(code.includes('graph.add_node("Synthesizer"'));
+      assert.ok(code.includes('graph.set_entry_point("Extractor")'));
+      assert.ok(code.includes('graph.add_edge("Extractor", "Synthesizer")'));
+      assert.ok(code.includes('graph.add_edge("Synthesizer", END)'));
       assert.ok(code.includes('graph.compile()'));
     });
   });

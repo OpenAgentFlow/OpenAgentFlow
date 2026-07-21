@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#0d1117"></stop>
+      <stop offset="1" stop-color="#161b22"></stop>
+    </linearGradient>
+    <linearGradient id="boxBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#1f6feb"></stop>
+      <stop offset="1" stop-color="#1158c7"></stop>
+    </linearGradient>
+    <linearGradient id="boxPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#8957e5"></stop>
+      <stop offset="1" stop-color="#6e40c9"></stop>
+    </linearGradient>
+    <linearGradient id="boxGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#238636"></stop>
+      <stop offset="1" stop-color="#196c2e"></stop>
+    </linearGradient>
+    <linearGradient id="boxSlate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#30363d"></stop>
+      <stop offset="1" stop-color="#21262d"></stop>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"></feDropShadow>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#58a6ff"></path>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#a371f7"></path>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#3fb950"></path>
+    </marker>
+  </defs>
+  <rect width="1000" height="420" rx="16" fill="url(#bgGrad)" stroke="#30363d" stroke-width="2" y="0"></rect>
+  <text x="30" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" fill="#f0f6fc" style="white-space: pre;">OpenAgentFlow Architecture &amp; Compilation Pipeline</text>
+  <text x="30" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#8b949e" style="white-space: pre;">Zero-dependency compiler decoupling workflow definition (`.oaf`) from runtime execution</text>
+  <g transform="translate(30, 130)" filter="url(#shadow)">
+    <rect width="140" height="90" rx="10" fill="url(#boxSlate)" stroke="#58a6ff" stroke-width="2"></rect>
+    <text x="70" y="35" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-size="15" font-weight="bold" fill="#58a6ff" style="white-space: pre;">workflow.oaf</text>
+    <text x="70" y="58" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#c9d1d9" style="white-space: pre;">Human-Readable</text>
+    <text x="70" y="74" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#c9d1d9" style="white-space: pre;">Text DSL</text>
+  </g>
+  <line x1="170" y1="176" x2="250" y2="175" stroke="#58a6ff" stroke-width="2.5" marker-end="url(#arrow)"></line>
+  <text x="210" y="163" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#8b949e" style="white-space: pre;">Lexer/Parser</text>
+  <g transform="translate(255, 130)" filter="url(#shadow)">
+    <rect width="180" height="90" rx="10" fill="url(#boxBlue)" stroke="#79c0ff" stroke-width="2"></rect>
+    <text x="90" y="35" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" style="white-space: pre;">Semantic Validator</text>
+    <text x="90" y="56" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#d1d5db" style="white-space: pre;">3-Phase Symbol &amp;</text>
+    <text x="90" y="72" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#d1d5db" style="white-space: pre;">Topology Checking</text>
+  </g>
+  <line x1="435" y1="175" x2="495" y2="175" stroke="#58a6ff" stroke-width="2.5" marker-end="url(#arrow)"></line>
+  <text x="465" y="163" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#8b949e" style="white-space: pre;">IR Gen</text>
+  <g transform="translate(500, 130)" filter="url(#shadow)">
+    <rect width="160" height="90" rx="10" fill="url(#boxPurple)" stroke="#d2a8ff" stroke-width="2"></rect>
+    <text x="80" y="35" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-size="15" font-weight="bold" fill="#ffffff" style="white-space: pre;">IR JSON</text>
+    <text x="80" y="56" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e5e7eb" style="white-space: pre;">Universal &amp; Portable</text>
+    <text x="80" y="72" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e5e7eb" style="white-space: pre;">Intermediate Spec</text>
+  </g>
+  <path d="M 722 175 L 722.431 110.38 L 756.307 110" fill="none" stroke="#a371f7" stroke-width="2.5" marker-end="url(#arrowPurple)"></path>
+  <path d="M 660.887 175 L 756.899 175" fill="none" stroke="#a371f7" stroke-width="2.5" marker-end="url(#arrowPurple)"></path>
+  <path d="M 722 175 L 722.051 240 L 756.751 240" fill="none" stroke="#a371f7" stroke-width="2.5" marker-end="url(#arrowPurple)"></path>
+  <text style="white-space: pre;" x="690" y="163" text-anchor="middle" font-weight="600" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="#8b949e">Adapters</text>
+  <g transform="matrix(1, 0, 0, 1, 760.035595, 85.000001)" filter="url(#shadow)">
+    <rect width="210" height="50" rx="8" fill="url(#boxGreen)" stroke="#56d364" stroke-width="2"></rect>
+    <text x="105" y="24" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#ffffff" style="white-space: pre;">LangGraph Adapter</text>
+    <text x="105" y="40" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-size="11" fill="#bbf7d0" style="white-space: pre;">Active (Python Runtime)</text>
+  </g>
+  <g transform="matrix(1, 0, 0, 1, 760.035595, 150.000002)" filter="url(#shadow)">
+    <rect width="210" height="50" rx="8" fill="url(#boxSlate)" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+    <text x="105" y="24" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#c9d1d9" style="white-space: pre;">AutoGen Adapter</text>
+    <text x="105" y="40" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#8b949e" style="white-space: pre;">Planned Target</text>
+  </g>
+  <g transform="matrix(1, 0, 0, 1, 760.035595, 215.000003)" filter="url(#shadow)">
+    <rect width="210" height="50" rx="8" fill="url(#boxSlate)" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+    <text x="105" y="24" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#c9d1d9" style="white-space: pre;">CrewAI Adapter</text>
+    <text x="105" y="40" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#8b949e" style="white-space: pre;">Planned Target</text>
+  </g>
+  <g transform="translate(30, 310)">
+    <rect width="945.132" height="70" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5" style=""></rect>
+    <circle cx="30" cy="35" r="8" fill="#58a6ff"></circle>
+    <text x="48" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#f0f6fc" style="white-space: pre; font-size: 13px;">Zero Core Dependencies:</text>
+    <text x="200.158" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#8b949e" style="white-space: pre; font-size: 13px;">The compiler operates entirely without third-party npm libraries.</text>
+    <circle cx="617.56" cy="35" r="8" fill="#3fb950"></circle>
+    <text x="635.56" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#f0f6fc" style="white-space: pre; font-size: 13px;">Multi-LLM Native:</text>
+    <text x="750.516" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#8b949e" style="white-space: pre; font-size: 13px;">Auto-detects provider models.</text>
+  </g>
+</svg>

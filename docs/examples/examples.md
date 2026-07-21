@@ -28,7 +28,7 @@ workflow "Hello" {
 
     agent Greeter {
         instructions: "Say hello to the user."
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
     }
 
     flow {
@@ -86,7 +86,7 @@ workflow "Summarize" {
         """
         inputs: [request, source_text]
         outputs: [key_points]
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
     }
 
     agent Writer {
@@ -96,7 +96,7 @@ workflow "Summarize" {
         """
         inputs: [key_points]
         outputs: [summary]
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
     }
 
     flow {
@@ -175,7 +175,7 @@ workflow "Software Development" {
         Identify key features, constraints, and acceptance criteria.
         Produce a structured analysis.
         """
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
         temperature: 0.3
         inputs: [requirements]
         outputs: [analysis]
@@ -186,7 +186,7 @@ workflow "Software Development" {
         Based on the analysis, design a technical architecture.
         Include component diagrams, data flow, and API contracts.
         """
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
         temperature: 0.5
         inputs: [analysis]
         outputs: [architecture]
@@ -197,7 +197,7 @@ workflow "Software Development" {
         Implement the solution based on the architecture.
         Write clean, tested, production-ready code.
         """
-        model: "gemma-4-26b-a4b-it"
+        model: "gemini-2.0-flash"
         temperature: 0.2
         tools: ["code_interpreter", "file_writer"]
         inputs: [architecture]

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/oaf-logo.svg" alt="OpenAgentFlow Logo" width="160"/>
+</p>
+
 # OpenAgentFlow
 
 **An Open, Portable Specification for Executable Multi-Agent Workflows**
@@ -6,10 +10,55 @@
 [![Core Dependencies: 0](https://img.shields.io/badge/core%20dependencies-0-blue.svg)](#project-structure)
 [![Target Runtime: LangGraph](https://img.shields.io/badge/runtime-LangGraph%20Python-orange.svg)](#multi-llm--runtime-integration)
 [![LLM Providers: Gemini | OpenAI | Anthropic](https://img.shields.io/badge/LLMs-Gemini%20%7C%20OpenAI%20%7C%20Anthropic-purple.svg)](#multi-llm--runtime-integration)
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Syntax%20Support-007ACC.svg?logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=OpenAgentFlow.openagentflow-support)
 [![Documentation](https://img.shields.io/badge/docs-complete-blue.svg)](docs/index.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > *What OpenAPI is for REST APIs, OpenAgentFlow (`.oaf`) is for AI agent workflows.*
+
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="OpenAgentFlow Terminal Screencast Demo" width="800"/>
+</p>
+
+### ⚡ The 60-Second Example
+Define your multi-agent workflow in clean, human-readable `.oaf` text—completely decoupled from Python/Node boilerplate:
+
+```js
+workflow "Quick Summarize" {
+    
+    state {
+        source_text: string @required
+        extracted_points: string
+        summary: string
+    }
+
+    agent Extractor {
+        instructions: "Read the `source_text` and extract the most important facts into a concise bulleted list."
+        model: "gemini-2.0-flash"
+        inputs: [source_text]
+        outputs: [extracted_points]
+    }
+
+    agent Synthesizer {
+        instructions: "Take the extracted points and weave them into a clear, cohesive summary paragraph."
+        model: "gpt-4o"
+        inputs: [extracted_points]
+        outputs: [summary]
+    }
+
+    flow {
+        start -> Extractor 
+        Extractor -> Synthesizer
+        Synthesizer -> end
+    }
+}
+```
+
+Compile and execute it immediately from your terminal:
+```bash
+# Run live against Gemini / OpenAI / Anthropic
+node cli/index.js run examples/summarize.oaf --input examples/summarize-input.json
+```
 
 ---
 

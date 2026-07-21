@@ -152,14 +152,13 @@ describe('CLI', () => {
 
     it('should inject --input JSON data into compiled LangGraph Python code', () => {
       const inputPath = resolve(__dirname, '..', 'tests', 'test_input.json');
-      writeFileSync(inputPath, JSON.stringify({ request: "Bulleted summary", source_text: "Some text" }), 'utf-8');
+      writeFileSync(inputPath, JSON.stringify({ source_text: "Some text to summarize" }), 'utf-8');
 
       try {
         const { stdout } = runCli(
           `compile "${resolve(EXAMPLES_DIR, 'summarize.oaf')}" --target langgraph --input "${inputPath}"`
         );
-        assert.ok(stdout.includes('"request": "Bulleted summary"'));
-        assert.ok(stdout.includes('"source_text": "Some text"'));
+        assert.ok(stdout.includes('"source_text": "Some text to summarize"'));
       } finally {
         if (existsSync(inputPath)) unlinkSync(inputPath);
       }
@@ -177,9 +176,9 @@ describe('CLI', () => {
 
     it('should show edges for multi-agent workflow', () => {
       const { stdout } = runCli(`graph "${resolve(EXAMPLES_DIR, 'summarize.oaf')}"`);
-      assert.ok(stdout.includes('Analyst'));
-      assert.ok(stdout.includes('Writer'));
-      assert.ok(stdout.includes('Analyst -> Writer'));
+      assert.ok(stdout.includes('Extractor'));
+      assert.ok(stdout.includes('Synthesizer'));
+      assert.ok(stdout.includes('Extractor -> Synthesizer'));
     });
   });
 

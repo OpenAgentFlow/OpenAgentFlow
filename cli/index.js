@@ -123,6 +123,8 @@ function parseArgs(args) {
       flags.set('input', args[++i] ?? '');
     } else if (arg === '-o') {
       flags.set('output', args[++i] ?? '');
+    } else if (arg === '--demo') {
+      flags.set('demo', 'true');
     } else if (arg.startsWith('--target=')) {
       flags.set('target', arg.split('=')[1]);
     } else if (arg.startsWith('--runtime=')) {
@@ -279,6 +281,11 @@ function cmdCompile(filePath, flags, positional = []) {
  */
 function cmdRun(filePath, flags, positional = []) {
   resolveEnvHierarchy(filePath);
+  // --- DEMO HOOK (Cleanly removable) ---
+  const isDemoMode = flags.get('demo') === 'true' || process.env.OAF_DEMO === '1';
+  if (isDemoMode) process.env.OAF_DEMO = '1';
+  // -------------------------------------
+
   const target = flags.get('target') ?? 'langgraph';
   const rawInputPath = flags.get('input') || positional[2] || null;
   const inputPath = rawInputPath ? resolve(rawInputPath) : null;
@@ -306,21 +313,54 @@ function cmdRun(filePath, flags, positional = []) {
   }
 
   // Pre-flight check 2: API Keys & OAF_DEFAULT_MODEL
-  for (const agent of result.ir.agents) {
-    if ((agent.model === null || agent.model === undefined) && !process.env.OAF_DEFAULT_MODEL) {
-      console.error(`${colors.red}Error:${colors.reset} No model specified for agent "${agent.id}" and no default model configured. Please specify a 'model' property in your agent definition or set the OAF_DEFAULT_MODEL environment variable.`);
-      process.exit(1);
+  if (!isDemoMode) {
+    const overrideModel = process.env.OAF_OVERRIDE_MODEL;
+    for (const agent of result.ir.agents) {
+      const targetModel = overrideModel || agent.model;
+      if ((targetModel === null || targetModel === undefined) && !process.env.OAF_DEFAULT_MODEL) {
+        console.error(`${colors.red}Error:${colors.reset} No model specified for agent "${agent.id}" and no default model configured. Please specify a 'model' property in your agent definition or set the OAF_DEFAULT_MODEL environment variable.`);
+        process.exit(1);
+      }
+
+      let provider = overrideModel ? null : agent.provider;
+      if (!provider && targetModel) {
+        if (targetModel.startsWith('claude-')) provider = 'anthropic';
+        else if (targetModel.startsWith('gpt-') || targetModel.startsWith('o1') || targetModel.startsWith('o3')) provider = 'openai';
+        else if (targetModel.startsWith('gemini-') || targetModel.startsWith('gemma-')) provider = 'gemini';
+      }
+
+      if (provider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
+        console.error(`${colors.red}Error:${colors.reset} Missing required API key "ANTHROPIC_API_KEY" for agent "${agent.id}" (provider: anthropic).`);
+        console.error(`Looked in order of priority:`);
+        console.error(`  1. Inline CLI overrides`);
+        console.error(`  2. Local Project .env`);
+        console.error(`  3. System Environment Variables`);
+        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        process.exit(1);
+      } else if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
+        console.error(`${colors.red}Error:${colors.reset} Missing required API key "OPENAI_API_KEY" for agent "${agent.id}" (provider: openai).`);
+        console.error(`Looked in order of priority:`);
+        console.error(`  1. Inline CLI overrides`);
+        console.error(`  2. Local Project .env`);
+        console.error(`  3. System Environment Variables`);
+        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        process.exit(1);
+      } else if (provider === 'gemini' && !process.env.GOOGLE_API_KEY) {
+        console.error(`${colors.red}Error:${colors.reset} Missing required API key "GOOGLE_API_KEY" for agent "${agent.id}" (provider: gemini).`);
+        console.error(`Looked in order of priority:`);
+        console.error(`  1. Inline CLI overrides`);
+        console.error(`  2. Local Project .env`);
+        console.error(`  3. System Environment Variables`);
+        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        process.exit(1);
+      }
     }
 
-    let provider = agent.provider;
-    if (!provider && agent.model) {
-      if (agent.model.startsWith('claude-')) provider = 'anthropic';
-      else if (agent.model.startsWith('gpt-') || agent.model.startsWith('o1') || agent.model.startsWith('o3')) provider = 'openai';
-      else if (agent.model.startsWith('gemini-') || agent.model.startsWith('gemma-')) provider = 'gemini';
-    }
-
-    if (provider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
-      console.error(`${colors.red}Error:${colors.reset} Missing required API key "ANTHROPIC_API_KEY" for agent "${agent.id}" (provider: anthropic).`);
+    if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && result.ir.agents.length > 0) {
+      console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
       console.error(`Looked in order of priority:`);
       console.error(`  1. Inline CLI overrides`);
       console.error(`  2. Local Project .env`);
@@ -328,36 +368,7 @@ function cmdRun(filePath, flags, positional = []) {
       console.error(`  4. Global OAF Store (~/.oaf/.env)`);
       console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
       process.exit(1);
-    } else if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
-      console.error(`${colors.red}Error:${colors.reset} Missing required API key "OPENAI_API_KEY" for agent "${agent.id}" (provider: openai).`);
-      console.error(`Looked in order of priority:`);
-      console.error(`  1. Inline CLI overrides`);
-      console.error(`  2. Local Project .env`);
-      console.error(`  3. System Environment Variables`);
-      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
-      process.exit(1);
-    } else if (provider === 'gemini' && !process.env.GOOGLE_API_KEY) {
-      console.error(`${colors.red}Error:${colors.reset} Missing required API key "GOOGLE_API_KEY" for agent "${agent.id}" (provider: gemini).`);
-      console.error(`Looked in order of priority:`);
-      console.error(`  1. Inline CLI overrides`);
-      console.error(`  2. Local Project .env`);
-      console.error(`  3. System Environment Variables`);
-      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
-      process.exit(1);
     }
-  }
-
-  if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && result.ir.agents.length > 0) {
-    console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
-    console.error(`Looked in order of priority:`);
-    console.error(`  1. Inline CLI overrides`);
-    console.error(`  2. Local Project .env`);
-    console.error(`  3. System Environment Variables`);
-    console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-    console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
-    process.exit(1);
   }
 
   // Generate Python code

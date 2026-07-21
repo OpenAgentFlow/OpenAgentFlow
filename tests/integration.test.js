@@ -55,36 +55,35 @@ describe('Integration: Example Files', () => {
       const result = compileFile('summarize.oaf');
       const ir = result.ir;
 
-      assert.strictEqual(ir.workflow.name, 'Summarize');
+      assert.strictEqual(ir.workflow.name, 'Quick Summarize');
       assert.strictEqual(ir.agents.length, 2);
 
       const agentIds = ir.agents.map(a => a.id);
-      assert.ok(agentIds.includes('Analyst'));
-      assert.ok(agentIds.includes('Writer'));
+      assert.ok(agentIds.includes('Extractor'));
+      assert.ok(agentIds.includes('Synthesizer'));
 
-      assert.strictEqual(ir.graph.entrypoint, 'Analyst');
-      assert.deepStrictEqual(ir.graph.terminals, ['Writer']);
+      assert.strictEqual(ir.graph.entrypoint, 'Extractor');
+      assert.deepStrictEqual(ir.graph.terminals, ['Synthesizer']);
       assert.strictEqual(ir.graph.edges.length, 1);
-      assert.strictEqual(ir.graph.edges[0].source, 'Analyst');
-      assert.strictEqual(ir.graph.edges[0].target, 'Writer');
+      assert.strictEqual(ir.graph.edges[0].source, 'Extractor');
+      assert.strictEqual(ir.graph.edges[0].target, 'Synthesizer');
     });
 
     it('should have correct state types', () => {
       const result = compileFile('summarize.oaf');
       const vars = result.ir.state.variables;
 
-      assert.strictEqual(vars.length, 4);
+      assert.strictEqual(vars.length, 3);
       const typeMap = Object.fromEntries(vars.map(v => [v.name, v.type]));
-      assert.strictEqual(typeMap.request, 'string');
       assert.strictEqual(typeMap.source_text, 'string');
-      assert.strictEqual(typeMap.key_points, 'list<string>');
+      assert.strictEqual(typeMap.extracted_points, 'string');
       assert.strictEqual(typeMap.summary, 'string');
     });
 
     it('should preserve config entries', () => {
-      const result = compileFile('summarize.oaf');
+      const result = compileFile('software-dev.oaf');
       assert.strictEqual(result.ir.workflow.config.version, '0.1');
-      assert.strictEqual(result.ir.workflow.config.runtime, 'langgraph');
+      assert.strictEqual(result.ir.workflow.config.timeout_seconds, 600);
     });
   });
 

@@ -1,5 +1,9 @@
 # Architecture
 
+<p align="center">
+  <img src="../assets/architecture.svg" alt="OpenAgentFlow Architecture Diagram" width="850"/>
+</p>
+
 This page explains the design philosophy, compilation pipeline, and module architecture of OpenAgentFlow.
 
 ---

@@ -1,19 +1,11 @@
 {
   "version": "0.1.0",
   "workflow": {
-    "name": "Summarize",
-    "config": {
-      "version": "0.1",
-      "runtime": "langgraph"
-    }
+    "name": "Quick Summarize",
+    "config": {}
   },
   "state": {
     "variables": [
-      {
-        "name": "request",
-        "type": "string",
-        "options": []
-      },
       {
         "name": "source_text",
         "type": "string",
@@ -25,8 +17,8 @@
         ]
       },
       {
-        "name": "key_points",
-        "type": "list<string>",
+        "name": "extracted_points",
+        "type": "string",
         "options": []
       },
       {
@@ -38,29 +30,28 @@
   },
   "agents": [
     {
-      "id": "Analyst",
-      "instructions": "Analyze the request and source text.\nIdentify the most important facts, themes, and action items.\nProduce concise key_points only.",
-      "model": "gemma-4-26b-a4b-it",
+      "id": "Extractor",
+      "instructions": "Read the `source_text` and extract the most important facts into a concise bulleted list.",
+      "model": "gemini-2.0-flash",
       "provider": "gemini",
       "temperature": null,
       "tools": [],
       "inputs": [
-        "request",
         "source_text"
       ],
       "outputs": [
-        "key_points"
+        "extracted_points"
       ]
     },
     {
-      "id": "Writer",
-      "instructions": "Use the key_points to write a clear, concise summary.\nPreserve meaning, remove redundancy, and match the requested tone.",
-      "model": "gemma-4-26b-a4b-it",
-      "provider": "gemini",
+      "id": "Synthesizer",
+      "instructions": "Take the extracted points and weave them into a clear, cohesive summary paragraph.",
+      "model": "gpt-4o",
+      "provider": "openai",
       "temperature": null,
       "tools": [],
       "inputs": [
-        "key_points"
+        "extracted_points"
       ],
       "outputs": [
         "summary"
@@ -70,13 +61,13 @@
   "graph": {
     "edges": [
       {
-        "source": "Analyst",
-        "target": "Writer"
+        "source": "Extractor",
+        "target": "Synthesizer"
       }
     ],
-    "entrypoint": "Analyst",
+    "entrypoint": "Extractor",
     "terminals": [
-      "Writer"
+      "Synthesizer"
     ]
   }
 }

@@ -6,6 +6,8 @@
  * IR parsing, or JavaScript implementation.
  */
 
+import { generateDemoHelperTemplate } from './demo_template.js';
+
 /**
  * Generate the Python file header comment block.
  * @param {object} params
@@ -90,27 +92,28 @@ export function generateImportsTemplate({ typingImports, needsLlmProviders, need
     lines.push(`_load_env_hierarchy()`);
     lines.push(``);
     lines.push(`# LLM providers — Gemini, OpenAI, Anthropic`);
-    lines.push(`_LLM_PROVIDER = None`);
-    lines.push(`try:`);
-    lines.push(`    from langchain_google_genai import ChatGoogleGenerativeAI`);
-    lines.push(`    if os.environ.get("GOOGLE_API_KEY"):`);
-    lines.push(`        _LLM_PROVIDER = "gemini"`);
-    lines.push(`except ImportError:`);
-    lines.push(`    pass`);
+    lines.push(`_LLM_PROVIDER = "demo" if os.environ.get("OAF_DEMO") == "1" else None`);
+    lines.push(`if os.environ.get("OAF_DEMO") != "1":`);
+    lines.push(`    try:`);
+    lines.push(`        from langchain_google_genai import ChatGoogleGenerativeAI`);
+    lines.push(`        if os.environ.get("GOOGLE_API_KEY"):`);
+    lines.push(`            _LLM_PROVIDER = "gemini"`);
+    lines.push(`    except ImportError:`);
+    lines.push(`        pass`);
     lines.push(``);
-    lines.push(`try:`);
-    lines.push(`    from langchain_openai import ChatOpenAI`);
-    lines.push(`    if os.environ.get("OPENAI_API_KEY") and _LLM_PROVIDER is None:`);
-    lines.push(`        _LLM_PROVIDER = "openai"`);
-    lines.push(`except ImportError:`);
-    lines.push(`    pass`);
+    lines.push(`    try:`);
+    lines.push(`        from langchain_openai import ChatOpenAI`);
+    lines.push(`        if os.environ.get("OPENAI_API_KEY") and _LLM_PROVIDER is None:`);
+    lines.push(`            _LLM_PROVIDER = "openai"`);
+    lines.push(`    except ImportError:`);
+    lines.push(`        pass`);
     lines.push(``);
-    lines.push(`try:`);
-    lines.push(`    from langchain_anthropic import ChatAnthropic`);
-    lines.push(`    if os.environ.get("ANTHROPIC_API_KEY") and _LLM_PROVIDER is None:`);
-    lines.push(`        _LLM_PROVIDER = "anthropic"`);
-    lines.push(`except ImportError:`);
-    lines.push(`    pass`);
+    lines.push(`    try:`);
+    lines.push(`        from langchain_anthropic import ChatAnthropic`);
+    lines.push(`        if os.environ.get("ANTHROPIC_API_KEY") and _LLM_PROVIDER is None:`);
+    lines.push(`            _LLM_PROVIDER = "anthropic"`);
+    lines.push(`    except ImportError:`);
+    lines.push(`        pass`);
   }
 
   lines.push('');
@@ -155,11 +158,17 @@ export function generateStateClassTemplate({ fields }) {
 export function generateLlmHelperTemplate({ defaultModel, defaultTemperature }) {
   const defaultModelArg = defaultModel != null ? `"${defaultModel}"` : `None`;
   const lines = [
+    generateDemoHelperTemplate(),
     `# ─── LLM Helper ─────────────────────────────────────────────────────────────`,
     ``,
     `def get_llm(model: Optional[str] = ${defaultModelArg}, temperature: float = ${defaultTemperature}, provider: Optional[str] = None):`,
     `    """Get the LLM instance. Uses provided model directly; falls back to OAF_DEFAULT_MODEL or raises error."""`,
     `    target_model = model if model else os.environ.get("OAF_DEFAULT_MODEL")`,
+    `    override_model = os.environ.get("OAF_OVERRIDE_MODEL")`,
+    `    if override_model:`,
+    `        target_model = override_model`,
+    `        provider = None`,
+    ``,
     `    if not target_model:`,
     `        raise RuntimeError(`,
     `            "No model specified and no default model configured. "`,
@@ -176,6 +185,12 @@ export function generateLlmHelperTemplate({ defaultModel, defaultTemperature }) 
     `            target_provider = "gemini"`,
     `    if not target_provider:`,
     `        target_provider = _LLM_PROVIDER`,
+    ``,
+    `    # --- DEMO HOOK (Cleanly removable) ---`,
+    `    _demo_inst = _maybe_get_demo_llm(target_model, temperature, target_provider)`,
+    `    if _demo_inst is not None:`,
+    `        return _demo_inst`,
+    `    # -------------------------------------`,
     ``,
     `    if target_provider == "gemini":`,
     `        try:`,
@@ -477,7 +492,10 @@ export function generateMainTemplate({ workflowName, initialStateFields, require
   lines.push(``);
   lines.push(`    print(f"{'-' * 50}")`);
   lines.push(`    print("Workflow completed. Final state:")`);
-  lines.push(`    print(json.dumps(result, indent=2, default=str))`);
+  lines.push(`    # --- DEMO HOOK (Cleanly removable) ---`);
+  lines.push(`    _final_state = _format_demo_state(result, initial_state) if "_format_demo_state" in globals() else result`);
+  lines.push(`    print(json.dumps(_final_state, indent=2, default=str))`);
+  lines.push(`    # -------------------------------------`);
   lines.push(``);
 
   return lines.join('\n');
