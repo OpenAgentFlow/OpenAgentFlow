@@ -37,6 +37,18 @@
     "openagentflow"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenAgentFlow/OpenAgentFlow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OpenAgentFlow/OpenAgentFlow/issues"
+  },
+  "homepage": "https://github.com/OpenAgentFlow/OpenAgentFlow#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "engines": {
     "node": ">=18.0.0"
   }
