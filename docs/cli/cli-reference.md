@@ -269,7 +269,8 @@ The `run` command searches for Python in this order:
 
 1. `$VIRTUAL_ENV/Scripts/python.exe` (Windows) or `$VIRTUAL_ENV/bin/python` (POSIX)
 2. `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (POSIX) in the current directory
-3. System `python`
+3. `venv/Scripts/python.exe` (Windows) or `venv/bin/python` (POSIX) in the current directory
+4. System `python3` or `python`
 
 ---
 

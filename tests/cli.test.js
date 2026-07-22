@@ -8,9 +8,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'child_process';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, unlinkSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { getPythonCommand } from '../cli/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(__dirname, '..', 'cli', 'index.js');
@@ -254,6 +255,68 @@ describe('CLI', () => {
       });
       assert.ok(exitCode !== 0);
       assert.ok(stderr.includes('Missing required API key') || stderr.includes('No LLM API key configured'));
+    });
+  });
+
+  describe('getPythonCommand', () => {
+    it('should detect python inside VIRTUAL_ENV when set', () => {
+      const origVenv = process.env.VIRTUAL_ENV;
+      const testVenv = resolve(__dirname, '_test_virtual_env');
+      const isWin = process.platform === 'win32';
+      const pyRelPath = isWin ? join('Scripts', 'python.exe') : join('bin', 'python');
+      const fullPyPath = join(testVenv, pyRelPath);
+
+      try {
+        mkdirSync(dirname(fullPyPath), { recursive: true });
+        writeFileSync(fullPyPath, '');
+        process.env.VIRTUAL_ENV = testVenv;
+
+        assert.strictEqual(getPythonCommand(), fullPyPath);
+      } finally {
+        if (origVenv !== undefined) process.env.VIRTUAL_ENV = origVenv;
+        else delete process.env.VIRTUAL_ENV;
+        if (existsSync(testVenv)) rmSync(testVenv, { recursive: true, force: true });
+      }
+    });
+
+    it('should detect python inside local venv directory', () => {
+      const origVenv = process.env.VIRTUAL_ENV;
+      delete process.env.VIRTUAL_ENV;
+      const origCwd = process.cwd();
+      const testCwd = resolve(__dirname, '_test_cwd_venv');
+      const isWin = process.platform === 'win32';
+      const pyRelPath = isWin ? join('venv', 'Scripts', 'python.exe') : join('venv', 'bin', 'python');
+      const fullPyPath = join(testCwd, pyRelPath);
+
+      try {
+        mkdirSync(dirname(fullPyPath), { recursive: true });
+        writeFileSync(fullPyPath, '');
+        process.chdir(testCwd);
+
+        assert.strictEqual(getPythonCommand(), fullPyPath);
+      } finally {
+        process.chdir(origCwd);
+        if (origVenv !== undefined) process.env.VIRTUAL_ENV = origVenv;
+        if (existsSync(testCwd)) rmSync(testCwd, { recursive: true, force: true });
+      }
+    });
+
+    it('should fallback to python3 or python when no virtual environment is found', () => {
+      const origVenv = process.env.VIRTUAL_ENV;
+      delete process.env.VIRTUAL_ENV;
+      const origCwd = process.cwd();
+      const testCwd = resolve(__dirname, '_test_cwd_empty');
+
+      try {
+        mkdirSync(testCwd, { recursive: true });
+        process.chdir(testCwd);
+        const cmd = getPythonCommand();
+        assert.ok(cmd === 'python3' || cmd === 'python');
+      } finally {
+        process.chdir(origCwd);
+        if (origVenv !== undefined) process.env.VIRTUAL_ENV = origVenv;
+        if (existsSync(testCwd)) rmSync(testCwd, { recursive: true, force: true });
+      }
     });
   });
 

@@ -275,7 +275,9 @@ The CLI auto-detects the Python executable in this order:
 | 2 | `$VIRTUAL_ENV/bin/python` | `VIRTUAL_ENV` env var is set (POSIX) |
 | 3 | `.venv/Scripts/python.exe` | Local `.venv` directory exists (Windows) |
 | 4 | `.venv/bin/python` | Local `.venv` directory exists (POSIX) |
-| 5 | `python` | System PATH |
+| 5 | `venv/Scripts/python.exe` | Local `venv` directory exists (Windows) |
+| 6 | `venv/bin/python` | Local `venv` directory exists (POSIX) |
+| 7 | `python3` / `python` | System PATH |
 
 ---
 

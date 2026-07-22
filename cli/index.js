@@ -17,8 +17,9 @@
  *   langgraph  Generate executable LangGraph Python code
  */
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, realpathSync } from 'fs';
 import { resolve, basename, join } from 'path';
+import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
 import os from 'os';
 import { Compiler } from '../compiler/compiler.js';
@@ -456,17 +457,27 @@ function cmdRun(filePath, flags, positional = []) {
   }
 }
 
-function getPythonCommand() {
+export function getPythonCommand() {
   if (process.env.VIRTUAL_ENV) {
     const venvWin = join(process.env.VIRTUAL_ENV, 'Scripts', 'python.exe');
     const venvPosix = join(process.env.VIRTUAL_ENV, 'bin', 'python');
     if (existsSync(venvWin)) return venvWin;
     if (existsSync(venvPosix)) return venvPosix;
   }
-  const localWin = join(process.cwd(), '.venv', 'Scripts', 'python.exe');
-  const localPosix = join(process.cwd(), '.venv', 'bin', 'python');
-  if (existsSync(localWin)) return localWin;
-  if (existsSync(localPosix)) return localPosix;
+  for (const venvDir of ['.venv', 'venv']) {
+    const localWin = join(process.cwd(), venvDir, 'Scripts', 'python.exe');
+    const localPosix = join(process.cwd(), venvDir, 'bin', 'python');
+    if (existsSync(localWin)) return localWin;
+    if (existsSync(localPosix)) return localPosix;
+  }
+  for (const cmd of ['python3', 'python']) {
+    try {
+      execSync(`${cmd} --version`, { stdio: 'ignore' });
+      return cmd;
+    } catch (e) {
+      // try next
+    }
+  }
   return 'python';
 }
 
@@ -577,4 +588,15 @@ function main() {
   }
 }
 
-main();
+let isMain = false;
+try {
+  if (process.argv[1]) {
+    const argPath = realpathSync(resolve(process.argv[1]));
+    const modPath = realpathSync(resolve(fileURLToPath(import.meta.url)));
+    isMain = argPath === modPath;
+  }
+} catch (e) {}
+
+if (isMain) {
+  main();
+}

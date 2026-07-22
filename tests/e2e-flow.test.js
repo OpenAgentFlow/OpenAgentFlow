@@ -22,6 +22,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
+import { getPythonCommand } from '../cli/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = resolve(__dirname, '..', 'examples');
@@ -56,7 +57,7 @@ function generatePython(oafSource) {
  */
 function checkPythonDeps() {
   try {
-    const result = spawnSync('python', ['-c', 'import langgraph; import langchain_google_genai; import langchain_openai'], {
+    const result = spawnSync(getPythonCommand(), ['-c', 'import langgraph; import langchain_google_genai; import langchain_openai'], {
       encoding: 'utf-8',
       timeout: 10000,
     });
@@ -72,7 +73,7 @@ function checkPythonDeps() {
  */
 function hasPython() {
   try {
-    const result = spawnSync('python', ['--version'], {
+    const result = spawnSync(getPythonCommand(), ['--version'], {
       encoding: 'utf-8',
       timeout: 5000,
     });
@@ -96,7 +97,7 @@ function runPython(code, timeoutMs = 60000) {
     if (OPENAI_API_KEY) env.OPENAI_API_KEY = OPENAI_API_KEY;
     env.PYTHONIOENCODING = 'utf-8';
 
-    const result = spawnSync('python', [tmpFile], {
+    const result = spawnSync(getPythonCommand(), [tmpFile], {
       encoding: 'utf-8',
       timeout: timeoutMs,
       env,
