@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import os from 'os';
-import { parseDotEnv, resolveEnvHierarchy } from '../cli/env.js';
+import { parseDotEnv, resolveEnvHierarchy, isPlaceholder } from '../cli/env.js';
 
 describe('Environment Variable Hierarchy & Management', () => {
   describe('parseDotEnv', () => {
@@ -44,6 +44,23 @@ API_KEY=sk-12345 # secret key
       `;
       const res = parseDotEnv(content);
       assert.strictEqual(res.API_KEY, 'sk-12345');
+    });
+  });
+
+  describe('isPlaceholder', () => {
+    it('should identify dummy values and unset values as placeholders', () => {
+      assert.strictEqual(isPlaceholder(null), true);
+      assert.strictEqual(isPlaceholder(undefined), true);
+      assert.strictEqual(isPlaceholder(''), true);
+      assert.strictEqual(isPlaceholder('your_google_gemini_api_key_here'), true);
+      assert.strictEqual(isPlaceholder('your-gemini-api-key-here'), true);
+      assert.strictEqual(isPlaceholder('TODO'), true);
+      assert.strictEqual(isPlaceholder('placeholder'), true);
+    });
+
+    it('should return false for valid API keys', () => {
+      assert.strictEqual(isPlaceholder('AIzaSyD...'), false);
+      assert.strictEqual(isPlaceholder('sk-proj-12345'), false);
     });
   });
 

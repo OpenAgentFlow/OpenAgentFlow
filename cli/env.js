@@ -56,6 +56,29 @@ export function parseDotEnv(content) {
 }
 
 /**
+ * Check if an environment variable value is a dummy placeholder string or unset.
+ * Returns true if val is null, undefined, empty, or contains typical template placeholder markers.
+ */
+export function isPlaceholder(val) {
+  if (val === null || val === undefined || typeof val !== 'string') {
+    return true;
+  }
+  const trimmed = val.trim();
+  if (trimmed === '') {
+    return true;
+  }
+  const lower = trimmed.toLowerCase();
+  return (
+    lower.startsWith('your_') ||
+    lower.startsWith('your-') ||
+    lower.includes('_here') ||
+    lower.includes('-here') ||
+    lower === 'todo' ||
+    lower === 'placeholder'
+  );
+}
+
+/**
  * Resolve environment variables across the 4-tier hierarchy:
  * 1. Inline CLI overrides & System Environment Variables (already in process.env)
  * 2. Local Project .env (sitting next to targetFilePath or process.cwd())

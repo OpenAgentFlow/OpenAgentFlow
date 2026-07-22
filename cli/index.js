@@ -25,7 +25,7 @@ import os from 'os';
 import { Compiler } from '../compiler/compiler.js';
 import { VERSION } from '../compiler/version.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
-import { resolveEnvHierarchy, setupAuth } from './env.js';
+import { resolveEnvHierarchy, setupAuth, isPlaceholder } from './env.js';
 
 // ─── ANSI Colors ───────────────────────────────────────────────────────────────
 
@@ -333,44 +333,48 @@ function cmdRun(filePath, flags, positional = []) {
         else if (targetModel.startsWith('gemini-') || targetModel.startsWith('gemma-')) provider = 'gemini';
       }
 
-      if (provider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
+      if (provider === 'anthropic' && (!process.env.ANTHROPIC_API_KEY || isPlaceholder(process.env.ANTHROPIC_API_KEY))) {
         console.error(`${colors.red}Error:${colors.reset} Missing required API key "ANTHROPIC_API_KEY" for agent "${agent.id}" (provider: anthropic).`);
         console.error(`Looked in order of priority:`);
         console.error(`  1. Inline CLI overrides`);
         console.error(`  2. Local Project .env`);
         console.error(`  3. System Environment Variables`);
         console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
         process.exit(1);
-      } else if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
+      } else if (provider === 'openai' && (!process.env.OPENAI_API_KEY || isPlaceholder(process.env.OPENAI_API_KEY))) {
         console.error(`${colors.red}Error:${colors.reset} Missing required API key "OPENAI_API_KEY" for agent "${agent.id}" (provider: openai).`);
         console.error(`Looked in order of priority:`);
         console.error(`  1. Inline CLI overrides`);
         console.error(`  2. Local Project .env`);
         console.error(`  3. System Environment Variables`);
         console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
         process.exit(1);
-      } else if (provider === 'gemini' && !process.env.GOOGLE_API_KEY) {
+      } else if (provider === 'gemini' && (!process.env.GOOGLE_API_KEY || isPlaceholder(process.env.GOOGLE_API_KEY))) {
         console.error(`${colors.red}Error:${colors.reset} Missing required API key "GOOGLE_API_KEY" for agent "${agent.id}" (provider: gemini).`);
         console.error(`Looked in order of priority:`);
         console.error(`  1. Inline CLI overrides`);
         console.error(`  2. Local Project .env`);
         console.error(`  3. System Environment Variables`);
         console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
         process.exit(1);
       }
     }
 
-    if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && result.ir.agents.length > 0) {
+    const hasValidGoogle = process.env.GOOGLE_API_KEY && !isPlaceholder(process.env.GOOGLE_API_KEY);
+    const hasValidOpenAI = process.env.OPENAI_API_KEY && !isPlaceholder(process.env.OPENAI_API_KEY);
+    const hasValidAnthropic = process.env.ANTHROPIC_API_KEY && !isPlaceholder(process.env.ANTHROPIC_API_KEY);
+
+    if (!hasValidGoogle && !hasValidOpenAI && !hasValidAnthropic && result.ir.agents.length > 0) {
       console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
       console.error(`Looked in order of priority:`);
       console.error(`  1. Inline CLI overrides`);
       console.error(`  2. Local Project .env`);
       console.error(`  3. System Environment Variables`);
       console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-      console.error(`Run \`oaf auth\` to set up your global credentials or create a local .env file.`);
+      console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
       process.exit(1);
     }
   }
