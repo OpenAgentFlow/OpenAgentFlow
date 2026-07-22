@@ -106,6 +106,24 @@ API_KEY=sk-12345 # secret key
       assert.strictEqual(res.sources.get('TEST_OVERRIDE_KEY'), 'inline_or_system');
     });
 
+    it('should load process.cwd()/.env even when targetFile is inside a subdirectory', () => {
+      const origCwd = process.cwd();
+      try {
+        process.chdir(tmpDir);
+        writeFileSync(join(tmpDir, '.env'), `TEST_LOCAL_KEY=cwd_root_val\n`);
+        const subDir = join(tmpDir, 'workflows');
+        mkdirSync(subDir, { recursive: true });
+        const targetFile = join(subDir, 'test.oaf');
+        writeFileSync(targetFile, `workflow "T" { agent A { instructions: "x" } flow { start -> A A -> end } }`);
+
+        const res = resolveEnvHierarchy(targetFile);
+        assert.strictEqual(process.env.TEST_LOCAL_KEY, 'cwd_root_val');
+        assert.strictEqual(res.sources.get('TEST_LOCAL_KEY'), 'local_env');
+      } finally {
+        process.chdir(origCwd);
+      }
+    });
+
     it('should write .env files with 0o600 permissions', () => {
       const secEnvPath = join(tmpDir, '.secret.env');
       writeFileSync(secEnvPath, `API_KEY=test\n`, { mode: 0o600 });

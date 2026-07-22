@@ -105,23 +105,24 @@ export function resolveEnvHierarchy(targetFilePath = null) {
     } catch (err) {}
   }
 
-  let localEnvPath = null;
+  let localEnv = {};
+  const cwdEnvPath = join(process.cwd(), '.env');
+  let localEnvPath = cwdEnvPath;
+  if (existsSync(cwdEnvPath)) {
+    try {
+      localEnv = parseDotEnv(readFileSync(cwdEnvPath, 'utf-8'));
+    } catch (err) {}
+  }
+
   if (targetFilePath && existsSync(targetFilePath)) {
     const absTarget = resolve(targetFilePath);
     try {
       const dir = statSync(absTarget).isDirectory() ? absTarget : dirname(absTarget);
-      localEnvPath = join(dir, '.env');
-    } catch (err) {
-      localEnvPath = join(process.cwd(), '.env');
-    }
-  } else {
-    localEnvPath = join(process.cwd(), '.env');
-  }
-
-  let localEnv = {};
-  if (localEnvPath && existsSync(localEnvPath)) {
-    try {
-      localEnv = parseDotEnv(readFileSync(localEnvPath, 'utf-8'));
+      const targetEnvPath = join(dir, '.env');
+      if (resolve(targetEnvPath) !== resolve(cwdEnvPath) && existsSync(targetEnvPath)) {
+        localEnvPath = targetEnvPath;
+        Object.assign(localEnv, parseDotEnv(readFileSync(targetEnvPath, 'utf-8')));
+      }
     } catch (err) {}
   }
 
