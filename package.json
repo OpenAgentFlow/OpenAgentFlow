@@ -24,6 +24,9 @@
   ],
   "scripts": {
     "test": "node --test tests/**/*.test.js",
+    "test:update-snapshots": "node -e \"process.env.UPDATE_SNAPSHOTS='1'; import('./tests/snapshot.test.js')\"",
+    "preversion": "npm test",
+    "version": "npm run test:update-snapshots && git add tests/snapshots",
     "oaf": "node cli/index.js"
   },
   "keywords": [
