@@ -12,6 +12,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
+import { VERSION } from '../compiler/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -349,7 +350,7 @@ describe('LangGraph Adapter', () => {
   describe('Compatibility Checking', () => {
     it('should report missing entrypoint', () => {
       const ir = {
-        version: '0.1.0',
+        version: VERSION,
         workflow: { name: 'Test', config: {} },
         state: { variables: [] },
         agents: [{ id: 'A', instructions: 'test' }],
@@ -363,7 +364,7 @@ describe('LangGraph Adapter', () => {
 
     it('should report missing terminals', () => {
       const ir = {
-        version: '0.1.0',
+        version: VERSION,
         workflow: { name: 'Test', config: {} },
         state: { variables: [] },
         agents: [{ id: 'A', instructions: 'test' }],

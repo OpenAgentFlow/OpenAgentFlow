@@ -11,6 +11,7 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
+import { VERSION } from '../compiler/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = resolve(__dirname, '..', 'examples');
@@ -34,7 +35,7 @@ describe('Integration: Example Files', () => {
       const result = compileFile('hello.oaf');
       const ir = result.ir;
 
-      assert.strictEqual(ir.version, '0.1.0');
+      assert.strictEqual(ir.version, VERSION);
       assert.strictEqual(ir.workflow.name, 'Hello');
       assert.strictEqual(ir.agents.length, 1);
       assert.strictEqual(ir.agents[0].id, 'Greeter');

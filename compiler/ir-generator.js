@@ -7,7 +7,9 @@
  * Pipeline: Validated AST → [IR Generator] → IR (JSON)
  */
 
-const IR_VERSION = '0.1.0';
+import { VERSION } from './version.js';
+
+const IR_VERSION = VERSION;
 
 export class IRGenerator {
   /**

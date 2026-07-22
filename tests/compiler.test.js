@@ -5,6 +5,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compiler } from '../compiler/compiler.js';
+import { VERSION } from '../compiler/index.js';
 
 describe('Compiler (End-to-End)', () => {
 
@@ -21,7 +22,7 @@ describe('Compiler (End-to-End)', () => {
 
       assert.strictEqual(result.status, 'success');
       assert.ok(result.ir);
-      assert.strictEqual(result.ir.version, '0.1.0');
+      assert.strictEqual(result.ir.version, VERSION);
       assert.strictEqual(result.ir.workflow.name, 'Hello');
       assert.strictEqual(result.ir.agents.length, 1);
       assert.strictEqual(result.ir.agents[0].id, 'Greeter');

@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
+import { VERSION } from '../compiler/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = resolve(__dirname, '..', 'examples');
@@ -77,7 +78,7 @@ describe('Snapshot Tests: IR Output Stability', () => {
   it('IR version should be consistent', () => {
     const files = ['hello.oaf', 'summarize.oaf', 'software-dev.oaf'];
     const versions = files.map(f => compileToIR(f).version);
-    assert.ok(versions.every(v => v === '0.1.0'), 'All IR versions should be 0.1.0');
+    assert.ok(versions.every(v => v === VERSION), `All IR versions should be ${VERSION}`);
   });
 
   it('IR should be deterministic (compile twice, get same result)', () => {

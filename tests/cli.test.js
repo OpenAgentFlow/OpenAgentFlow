@@ -12,6 +12,7 @@ import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, unlinkSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { getPythonCommand } from '../cli/index.js';
+import { VERSION } from '../compiler/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(__dirname, '..', 'cli', 'index.js');
@@ -62,7 +63,7 @@ describe('CLI', () => {
   describe('--version', () => {
     it('should print version number', () => {
       const { stdout } = runCli('--version');
-      assert.ok(stdout.trim() === '0.1.0');
+      assert.strictEqual(stdout.trim(), VERSION);
     });
   });
 
@@ -111,14 +112,14 @@ describe('CLI', () => {
     it('should compile to IR (default target)', () => {
       const { stdout } = runCli(`compile "${resolve(EXAMPLES_DIR, 'hello.oaf')}"`);
       const ir = JSON.parse(stdout);
-      assert.strictEqual(ir.version, '0.1.0');
+      assert.strictEqual(ir.version, VERSION);
       assert.strictEqual(ir.workflow.name, 'Hello');
     });
 
     it('should compile to IR with explicit --target ir', () => {
       const { stdout } = runCli(`compile "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --target ir`);
       const ir = JSON.parse(stdout);
-      assert.strictEqual(ir.version, '0.1.0');
+      assert.strictEqual(ir.version, VERSION);
     });
 
     it('should compile to LangGraph Python', () => {

@@ -22,7 +22,7 @@ OpenAgentFlow ships with four example workflows of increasing complexity:
 
 The simplest possible OpenAgentFlow workflow: one agent, no state.
 
-```oaf
+```js
 // Minimal workflow: single agent, no state
 workflow "Hello" {
 
@@ -67,7 +67,7 @@ oaf run examples/hello.oaf
 
 A two-agent pipeline that analyzes text and produces a summary, demonstrating shared state and the `@required` option.
 
-```oaf
+```js
 // Summarize workflow: analyze text then produce a summary
 workflow "Summarize" {
 
@@ -157,7 +157,7 @@ The `summarize-input.json` file provides the required `source_text`:
 
 A three-agent pipeline simulating a software development process with tools and configuration.
 
-```oaf
+```js
 // Three-agent pipeline: research → design → implement
 workflow "Software Development" {
 
@@ -251,7 +251,7 @@ What task should the workflow accomplish? Break it into distinct steps that coul
 
 What data flows between agents? Define variables for each piece of information:
 
-```oaf
+```js
 state {
     // Inputs — what starts the workflow
     user_query: string @required
@@ -269,7 +269,7 @@ state {
 
 Create one agent per distinct task. Write clear, specific instructions:
 
-```oaf
+```js
 agent Researcher {
     instructions: """
     Search for relevant information about the user's query.
@@ -308,7 +308,7 @@ agent ReportWriter {
 
 #### 4. Connect the Flow
 
-```oaf
+```js
 flow {
     start -> Researcher
     Researcher -> Analyst
@@ -347,7 +347,7 @@ oaf run my-workflow.oaf --input test-data.json
 
 The most common pattern — agents process data sequentially:
 
-```oaf
+```js
 flow {
     start -> A
     A -> B
@@ -360,7 +360,7 @@ flow {
 
 One agent's output feeds multiple downstream agents:
 
-```oaf
+```js
 flow {
     start -> Router
     Router -> PathA
@@ -374,7 +374,7 @@ flow {
 
 Multiple paths converge on a single agent:
 
-```oaf
+```js
 flow {
     start -> Splitter
     Splitter -> AnalystA

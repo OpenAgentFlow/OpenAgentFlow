@@ -23,9 +23,9 @@ This document aggregates all remaining work items, technical debt, and planned e
   - *Current State:* Any `@reducer("strategy")` string produces `Annotated[T, operator.add]` in Python regardless of the strategy name.
   - *TODO:* Validate strategy values against supported reducer algorithms (`append`, `replace`, `merge`) and map them to distinct Python reducer functions. *(Ref: `handover/2026-07-18-documentation.md` L2)*
 
-- [ ] **Dynamic IR Versioning (`[/]` Partially Implemented)**
-  - *Current State:* IR version is hardcoded to `'0.1.0'` in `compiler/ir-generator.js`.
-  - *TODO:* Derive the version directly from `package.json` to ensure single source of truth across releases. *(Ref: `handover/2026-07-18-documentation.md` L4)*
+- [x] **Dynamic IR Versioning (`[x]` Completed)**
+  - *Current State:* IR version is dynamically derived from `package.json` (`compiler/version.js`) across compiler, CLI, and adapters.
+  - *Completed:* Single source of truth achieved across releases. *(Ref: `handover/2026-07-18-documentation.md` L4)*
 
 - [ ] **Remove Test/Demo Options from Validator (`[ ]` Unimplemented)**
   - *Current State:* `anotheroptions` and `active` exist inside `SUPPORTED_STATE_OPTIONS` (`compiler/validator.js`) as test/demo entries.

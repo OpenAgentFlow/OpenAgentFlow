@@ -23,6 +23,7 @@ import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
 import os from 'os';
 import { Compiler } from '../compiler/compiler.js';
+import { VERSION } from '../compiler/version.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
 import { resolveEnvHierarchy, setupAuth } from './env.js';
 
@@ -42,7 +43,7 @@ const colors = {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function printBanner() {
-  console.log(`${colors.cyan}${colors.bold}OpenAgentFlow${colors.reset} ${colors.dim}v0.1.0${colors.reset}`);
+  console.log(`${colors.cyan}${colors.bold}OpenAgentFlow${colors.reset} ${colors.dim}v${VERSION}${colors.reset}`);
   console.log();
 }
 
@@ -546,7 +547,7 @@ function main() {
   }
 
   if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
-    console.log('0.1.0');
+    console.log(VERSION);
     process.exit(0);
   }
 
