@@ -1,6 +1,6 @@
 {
   "name": "openagentflow",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "An open, portable specification for describing AI agent workflows using a human-readable text language.",
   "type": "module",
   "main": "compiler/index.js",
