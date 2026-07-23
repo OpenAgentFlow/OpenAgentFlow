@@ -122,7 +122,7 @@ The fastest way to start building executable multi-agent workflows without manua
 If you prefer creating workflows from scratch in your own workspace without cloning a template:
 
 1. **Install Prerequisites & CLI:**
-   Ensure **Node.js** (v18+) and **Python** (v3.10+) are installed, then install the CLI globally:
+   Ensure **Node.js** (v22+) and **Python** (v3.10+) are installed, then install the CLI globally:
    ```bash
    npm install -g openagentflow
    ```

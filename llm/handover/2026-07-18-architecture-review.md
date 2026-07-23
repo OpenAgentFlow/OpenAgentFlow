@@ -297,7 +297,7 @@ OpenAgentFlow's architecture (`Parser → Compiler → Adapters → CLI`) is exc
 - **Intermediate Representation (IR) Boundary**: The IR JSON document (`spec/IR.md`) acts as an immutable contract between language syntax and runtime engines. This completely decouples DSL authoring from target language variations (`LangGraph Python`, `AutoGen`, `CrewAI`, etc.).
 
 ### 2. Dependency Strategy (`Best-of-breed Zero-Dependency Core`)
-- **Core Compiler Dependencies: `0`**: The entire lexer, recursive-descent parser, 3-phase semantic/graph validator, IR generator, and LangGraph code generator run natively on pure Node.js (v18+) without any external npm libraries.
+- **Core Compiler Dependencies: `0`**: The entire lexer, recursive-descent parser, 3-phase semantic/graph validator, IR generator, and LangGraph code generator run natively on pure Node.js (v22+) without any external npm libraries.
 - **Testing Dependencies: `0`**: The 131-test suite uses native Node.js (`node --test`).
 - **Evaluation**: This is **Best-in-Class** for a compiler toolchain and specification reference implementation. It eliminates npm vulnerability footprints, guarantees instant startup times, and makes the compiler embeddable inside browser/edge runtimes without bundler overhead.
 
