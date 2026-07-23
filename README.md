@@ -11,6 +11,7 @@
 [![Target Runtime: LangGraph](https://img.shields.io/badge/runtime-LangGraph%20Python-orange.svg)](#multi-llm--runtime-integration)
 [![LLM Providers: Gemini | OpenAI | Anthropic](https://img.shields.io/badge/LLMs-Gemini%20%7C%20OpenAI%20%7C%20Anthropic-purple.svg)](#multi-llm--runtime-integration)
 [![VS Code Extension](https://img.shields.io/badge/VS%20Code-Syntax%20Support-007ACC.svg?logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=OpenAgentFlow.openagentflow-support)
+[![Starter Repository](https://img.shields.io/badge/Starter-Clone%20%26%20Run-00C853.svg?logo=github)](https://github.com/OpenAgentFlow/OpenAgentFlow-starter)
 [![Documentation](https://img.shields.io/badge/docs-complete-blue.svg)](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/index.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -160,6 +161,15 @@ The complete documentation is available in our GitHub `docs/` directory, includi
 * **[Language Reference](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/language/oaf-language.md):** Complete `.oaf` syntax.
 * **[Formal Specs](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/spec/SPEC.md):** EBNF grammar, semantic rules, and IR schema.
 * **[API & CLI Ref](https://github.com/OpenAgentFlow/OpenAgentFlow/blob/master/docs/cli/cli-reference.md):** Programmatic API and command-line flags.
+
+---
+
+## 🧰 Editor & Tooling
+
+| Tool | Description |
+| :--- | :--- |
+| **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=OpenAgentFlow.openagentflow-support)** | Full syntax highlighting, smart editor config, and auto-closing for `.oaf` files. Install from the Visual Studio Marketplace. |
+| **[Starter Repository](https://github.com/OpenAgentFlow/OpenAgentFlow-starter)** | Clone-and-run template with pre-built workflows, automated environment setup, and Dev Container / Codespaces support. |
 
 ---
 
