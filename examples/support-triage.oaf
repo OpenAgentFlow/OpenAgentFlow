@@ -14,11 +14,6 @@ workflow "SupportTriage" {
         Drafter -> end
     }
 
-    config {
-        version: "1.0"
-        runtime: "langgraph"
-    }
-
     agent Classifier {
         model: "gemini-3.1-flash-lite"
         temperature: 0.1

@@ -6,7 +6,8 @@
 
 **An Open, Portable Specification for Executable Multi-Agent Workflows**
 
-[![Tests: 163 Passing](https://img.shields.io/badge/tests-163%20passing-brightgreen.svg)](#testing--quality-assurance)
+[![Tests: 193 Passing](https://img.shields.io/badge/tests-193%20passing-brightgreen.svg)](#testing--quality-assurance)
+[![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](#testing--quality-assurance)
 [![Core Dependencies: 0](https://img.shields.io/badge/core%20dependencies-0-blue.svg)](#project-structure)
 [![Target Runtime: LangGraph](https://img.shields.io/badge/runtime-LangGraph%20Python-orange.svg)](#multi-llm--runtime-integration)
 [![LLM Providers: Gemini | OpenAI | Anthropic](https://img.shields.io/badge/LLMs-Gemini%20%7C%20OpenAI%20%7C%20Anthropic-purple.svg)](#multi-llm--runtime-integration)

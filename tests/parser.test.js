@@ -6,6 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Lexer } from '../parser/lexer.js';
 import { Parser, ParseError } from '../parser/parser.js';
+import { StateField, PrimitiveType } from '../parser/ast.js';
 
 function parse(source) {
   const lexer = new Lexer(source);
@@ -15,6 +16,17 @@ function parse(source) {
 }
 
 describe('Parser', () => {
+
+  describe('AST Constructors', () => {
+    it('should handle StateField backwards compatibility constructor', () => {
+      const typeExpr = new PrimitiveType('string', 1, 5);
+      const field = new StateField('name', typeExpr, 10, 15);
+      assert.strictEqual(field.name, 'name');
+      assert.deepStrictEqual(field.options, []);
+      assert.strictEqual(field.line, 10);
+      assert.strictEqual(field.column, 15);
+    });
+  });
 
   describe('Minimal workflow', () => {
     it('should parse a minimal workflow', () => {
@@ -84,8 +96,12 @@ describe('Parser', () => {
       const ast = parse(`
         workflow "Test" {
           state {
-            request: string @required @anotheroptions(paramater,another-param)
-            count: int @min(0) @max(100.5) @active(true)
+            request: string @required
+            count: int @min(0) @max(100.5)
+            done: bool @default(true)
+            skipped: bool @default(false)
+            custom: string @default(my_ident)
+            another: string @default(list)
           }
           agent A { instructions: "test" }
           flow { start -> A  A -> end }
@@ -93,19 +109,31 @@ describe('Parser', () => {
       `);
 
       const fields = ast.workflow.state.fields;
-      assert.strictEqual(fields[0].options.length, 2);
+      assert.strictEqual(fields[0].options.length, 1);
       assert.strictEqual(fields[0].options[0].name, 'required');
       assert.deepStrictEqual(fields[0].options[0].args, []);
-      assert.strictEqual(fields[0].options[1].name, 'anotheroptions');
-      assert.deepStrictEqual(fields[0].options[1].args, ['paramater', 'another-param']);
 
-      assert.strictEqual(fields[1].options.length, 3);
+      assert.strictEqual(fields[1].options.length, 2);
       assert.strictEqual(fields[1].options[0].name, 'min');
       assert.deepStrictEqual(fields[1].options[0].args, [0]);
       assert.strictEqual(fields[1].options[1].name, 'max');
       assert.deepStrictEqual(fields[1].options[1].args, [100.5]);
-      assert.strictEqual(fields[1].options[2].name, 'active');
-      assert.deepStrictEqual(fields[1].options[2].args, [true]);
+      
+      assert.strictEqual(fields[2].options.length, 1);
+      assert.strictEqual(fields[2].options[0].name, 'default');
+      assert.deepStrictEqual(fields[2].options[0].args, [true]);
+
+      assert.strictEqual(fields[3].options.length, 1);
+      assert.strictEqual(fields[3].options[0].name, 'default');
+      assert.deepStrictEqual(fields[3].options[0].args, [false]);
+
+      assert.strictEqual(fields[4].options.length, 1);
+      assert.strictEqual(fields[4].options[0].name, 'default');
+      assert.deepStrictEqual(fields[4].options[0].args, ['my_ident']);
+
+      assert.strictEqual(fields[5].options.length, 1);
+      assert.strictEqual(fields[5].options[0].name, 'default');
+      assert.deepStrictEqual(fields[5].options[0].args, ['list']);
     });
   });
 
@@ -204,7 +232,7 @@ describe('Parser', () => {
   });
 
   describe('Config block', () => {
-    it('should parse config entries', () => {
+    it('should parse config entries including true/false', () => {
       const ast = parse(`
         workflow "Test" {
           agent A { instructions: "a" }
@@ -212,21 +240,28 @@ describe('Parser', () => {
           config {
             version: "0.1"
             timeout: 300
+            rate: 0.5
             debug: true
+            skip: false
           }
         }
       `);
 
       const entries = ast.workflow.config.entries;
-      assert.strictEqual(entries.length, 3);
+      assert.strictEqual(entries.length, 5);
       assert.strictEqual(entries[0].key, 'version');
       assert.strictEqual(entries[0].value, '0.1');
       assert.strictEqual(entries[1].key, 'timeout');
       assert.strictEqual(entries[1].value, 300);
-      assert.strictEqual(entries[2].key, 'debug');
-      assert.strictEqual(entries[2].value, true);
+      assert.strictEqual(entries[2].key, 'rate');
+      assert.strictEqual(entries[2].value, 0.5);
+      assert.strictEqual(entries[3].key, 'debug');
+      assert.strictEqual(entries[3].value, true);
+      assert.strictEqual(entries[4].key, 'skip');
+      assert.strictEqual(entries[4].value, false);
     });
   });
+
 
   describe('Error handling', () => {
     it('should reject multiple flow blocks', () => {
@@ -295,6 +330,78 @@ describe('Parser', () => {
           }
           agent A { instructions: "a" }
           flow { start -> A  A -> end }
+        }
+      `), ParseError);
+    });
+
+    it('should reject unexpected token in workflow body', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          unknown_token
+        }
+      `), ParseError);
+    });
+
+    it('should reject unexpected token in type expression', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          state { x: unknown_type }
+        }
+      `), ParseError);
+    });
+
+    it('should reject unknown agent property', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          agent A { invalid_prop: "a" }
+        }
+      `), ParseError);
+    });
+
+    it('should reject non-string value where string is expected in agent', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          agent A { instructions: 123 }
+        }
+      `), ParseError);
+    });
+
+    it('should reject invalid flow node', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          flow { { -> } }
+        }
+      `), ParseError);
+    });
+
+    it('should reject invalid config value', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          config { key: { } }
+        }
+      `), ParseError);
+    });
+
+    it('should safely peek beyond EOF', () => {
+      const lexer = new Lexer('workflow "Test" {}');
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const eofToken = parser.peek(100);
+      assert.strictEqual(eofToken.type, 'EOF');
+    });
+
+    it('should reject agent with empty model string', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          agent A { instructions: "a" model: "" }
+        }
+      `), ParseError);
+    });
+
+    it('should reject agent with empty provider string', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          agent A { instructions: "a" provider: "   " }
         }
       `), ParseError);
     });

@@ -153,7 +153,7 @@ When executing a workflow, OpenAgentFlow selects the provider for each agent in 
 npm test
 ```
 
-You should see **163 tests passing** across 10 test files.
+You should see **193 tests passing** across 10 test files.
 
 ### Check the CLI
 

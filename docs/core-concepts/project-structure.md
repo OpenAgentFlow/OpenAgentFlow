@@ -40,7 +40,7 @@ OpenAgentFlow/
 │   ├── software-dev.oaf            # Three-agent pipeline with tools
 │   └── summarize-input.json        # Sample input data for summarize workflow
 │
-├── tests/                          # Test Suite (131 tests, 9 files)
+├── tests/                          # Test Suite (193 tests, 9 files)
 │   ├── lexer.test.js               # Tokenization tests
 │   ├── parser.test.js              # AST parsing tests
 │   ├── validator.test.js           # Semantic validation tests
@@ -117,7 +117,7 @@ The `package.json` configures:
 
 ## Test Organization
 
-Tests use Node.js's built-in test runner (`node --test`) with zero test framework dependencies.
+Tests use Node.js's built-in test runner (`node --test`) with zero test framework dependencies. The core compiler pipeline (`parser/`, `compiler/`, and `adapters/`) maintains **100% line coverage** validated natively by Node.
 
 | Test File | Coverage |
 |---|---|

@@ -24,3 +24,7 @@ export function getVersion() {
 }
 
 export const VERSION = getVersion();
+
+export function clearVersionCache() {
+  cachedVersion = null;
+}

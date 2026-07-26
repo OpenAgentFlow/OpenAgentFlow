@@ -317,7 +317,7 @@ import { SUPPORTED_STATE_OPTIONS } from './compiler/index.js';
 
 // Type: Record<string, { description: string, minArgs: number, maxArgs: number }>
 // Keys: 'required', 'default', 'description', 'desc',
-//        'reducer', 'min', 'max', 'anotheroptions', 'active'
+//        'reducer', 'min', 'max'
 ```
 
 ---

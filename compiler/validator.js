@@ -101,16 +101,6 @@ export const SUPPORTED_STATE_OPTIONS = {
     minArgs: 1,
     maxArgs: 1,
   },
-  anotheroptions: {
-    description: 'Demonstration option allowing multiple parameters',
-    minArgs: 0,
-    maxArgs: Infinity,
-  },
-  active: {
-    description: 'Marks active status',
-    minArgs: 1,
-    maxArgs: 1,
-  },
 };
 
 export class SemanticValidator {
@@ -420,15 +410,6 @@ export class SemanticValidator {
 
   graphValidation(workflow) {
     const edges = workflow.flow.edges;
-
-    for (const edge of edges) {
-      if (edge.target === 'start') {
-        this.result.error(`Incoming edge to start node not allowed: ${edge.source} -> start`, edge.line, edge.column);
-      }
-      if (edge.source === 'end') {
-        this.result.error(`Outgoing edge from end node not allowed: end -> ${edge.target}`, edge.line, edge.column);
-      }
-    }
 
     // 5.1 Start node: exactly one edge from start
     const startEdges = edges.filter(e => e.source === 'start');

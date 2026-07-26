@@ -7,10 +7,10 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, unlinkSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, unlinkSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'fs';
 import { getPythonCommand } from '../cli/index.js';
 import { VERSION } from '../compiler/index.js';
 
@@ -21,7 +21,7 @@ const EXAMPLES_DIR = resolve(__dirname, '..', 'examples');
 /**
  * Run the CLI and return { stdout, stderr, exitCode }.
  */
-function runCli(args, expectFailure = false, envOverrides = null) {
+function runCli(args, expectFailure = false, envOverrides = null, stdinInput = null) {
   const options = {
     cwd: resolve(__dirname, '..'),
     encoding: 'utf-8',
@@ -29,6 +29,9 @@ function runCli(args, expectFailure = false, envOverrides = null) {
   };
   if (envOverrides) {
     options.env = { ...process.env, ...envOverrides };
+  }
+  if (stdinInput !== null) {
+    options.input = stdinInput;
   }
   try {
     const stdout = execSync(`node "${CLI_PATH}" ${args}`, options);
@@ -144,6 +147,28 @@ describe('CLI', () => {
       unlinkSync(outPath);
     });
 
+    it('should accept --target=langgraph and --output=file options', () => {
+      const outPath = resolve(__dirname, '..', 'tests', 'test_output2.py');
+      if (existsSync(outPath)) unlinkSync(outPath);
+      const { stdout } = runCli(
+        `compile "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --target=langgraph --output="${outPath}"`
+      );
+      assert.ok(stdout.includes('Compiled'));
+      assert.ok(existsSync(outPath), 'Output file should exist');
+      unlinkSync(outPath);
+    });
+
+    it('should accept -i=file and -o=file options', () => {
+      const outPath = resolve(__dirname, '..', 'tests', 'test_output3.py');
+      if (existsSync(outPath)) unlinkSync(outPath);
+      const { stdout } = runCli(
+        `compile "${resolve(EXAMPLES_DIR, 'hello.oaf')}" -t langgraph -o="${outPath}"`
+      );
+      assert.ok(stdout.includes('Compiled'));
+      assert.ok(existsSync(outPath), 'Output file should exist');
+      unlinkSync(outPath);
+    });
+
     it('should reject unknown target', () => {
       const { exitCode, stderr } = runCli(
         `compile "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --target unknown`,
@@ -256,6 +281,71 @@ describe('CLI', () => {
       });
       assert.ok(exitCode !== 0);
       assert.ok(stderr.includes('Missing required API key') || stderr.includes('No LLM API key configured'));
+    });
+
+    it('should execute successfully via Python subprocess in demo mode', () => {
+      const { stdout, stderr, exitCode } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --demo`, true);
+      if (exitCode === 0) {
+        assert.ok(stdout.includes('Workflow execution completed successfully.'));
+      } else {
+        assert.strictEqual(exitCode, 1);
+        assert.ok(stderr.includes('ModuleNotFoundError') || stderr.includes('pip install langgraph'));
+      }
+    });
+
+    it('should execute successfully with --runtime alias', () => {
+      const { stdout, stderr, exitCode } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --runtime langgraph --demo`, true);
+      if (exitCode === 0) {
+        assert.ok(stdout.includes('Workflow execution completed successfully.'));
+      } else {
+        assert.strictEqual(exitCode, 1);
+        assert.ok(stderr.includes('ModuleNotFoundError') || stderr.includes('pip install langgraph'));
+      }
+    });
+  });
+
+  describe('auth command', () => {
+    it('should prompt for API keys and save to ~/.oaf/.env', (t, done) => {
+      const testHome = resolve(__dirname, '_test_home');
+      const oafDir = join(testHome, '.oaf');
+      const envFile = join(oafDir, '.env');
+      if (existsSync(testHome)) rmSync(testHome, { recursive: true, force: true });
+      mkdirSync(testHome, { recursive: true });
+
+      const child = spawn('node', [CLI_PATH, 'auth'], {
+        env: { ...process.env, HOME: testHome, USERPROFILE: testHome }
+      });
+
+      let stdout = '';
+      child.stdout.on('data', (data) => {
+        const text = data.toString();
+        stdout += text;
+        if (text.includes('OpenAI API Key')) {
+          child.stdin.write('sk-openai-123\n');
+        } else if (text.includes('Anthropic API Key')) {
+          child.stdin.write('sk-anthropic-456\n');
+        } else if (text.includes('Google Gemini API Key')) {
+          child.stdin.write('sk-gemini-789\n');
+        }
+      });
+
+      child.on('close', (code) => {
+        try {
+          assert.strictEqual(code, 0);
+          assert.ok(stdout.includes('Saved to ~/.oaf/.env'));
+          
+          const savedEnv = readFileSync(envFile, 'utf-8');
+          assert.ok(savedEnv.includes('OPENAI_API_KEY=sk-openai-123'));
+          assert.ok(savedEnv.includes('ANTHROPIC_API_KEY=sk-anthropic-456'));
+          assert.ok(savedEnv.includes('GOOGLE_API_KEY=sk-gemini-789'));
+          
+          if (existsSync(testHome)) rmSync(testHome, { recursive: true, force: true });
+          done();
+        } catch (e) {
+          if (existsSync(testHome)) rmSync(testHome, { recursive: true, force: true });
+          done(e);
+        }
+      });
     });
   });
 

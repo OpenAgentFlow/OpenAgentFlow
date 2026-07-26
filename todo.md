@@ -27,9 +27,9 @@ This document aggregates all remaining work items, technical debt, and planned e
   - *Current State:* IR version is dynamically derived from `package.json` (`compiler/version.js`) across compiler, CLI, and adapters.
   - *Completed:* Single source of truth achieved across releases. *(Ref: `handover/2026-07-18-documentation.md` L4)*
 
-- [ ] **Remove Test/Demo Options from Validator (`[ ]` Unimplemented)**
+- [x] **Remove Test/Demo Options from Validator (`[x]` Completed)**
   - *Current State:* `anotheroptions` and `active` exist inside `SUPPORTED_STATE_OPTIONS` (`compiler/validator.js`) as test/demo entries.
-  - *TODO:* Remove these from the public validator and `api-reference.md` or make `SUPPORTED_STATE_OPTIONS` dynamically extensible for test suites. *(Ref: `handover/2026-07-18-documentation.md` H1)*
+  - *Completed:* Removed test options from public validator. Tests updated to use `@default(true/false)`. *(Ref: `handover/2026-07-18-documentation.md` H1)*
 
 ### 1.2 Language Expressiveness Roadmap
 - [ ] **Conditional Routing / `when` Clause (`[ ]` Unimplemented)**

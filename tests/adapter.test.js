@@ -146,6 +146,34 @@ describe('LangGraph Adapter', () => {
       `);
       assert.ok(code.includes('data: Optional[Dict[str, int]]'));
     });
+
+    it('should fallback to Any for unknown IR type', () => {
+      // Create raw IR with an unknown type string
+      const ir = {
+        version: '0.1.0',
+        workflow: { name: 'Test', config: {} },
+        state: { variables: [{ name: 'weird', type: 'unknown_type' }] },
+        agents: [{ id: 'A', instructions: 'a' }],
+        graph: { edges: [], entrypoint: 'A', terminals: ['A'] }
+      };
+      const adapter = new LangGraphAdapter(ir);
+      const code = adapter.generate();
+      assert.ok(code.includes('weird: Optional[Any]'));
+    });
+
+    it('should fallback to Any for map without comma', () => {
+      // Create raw IR with malformed map type
+      const ir = {
+        version: '0.1.0',
+        workflow: { name: 'Test', config: {} },
+        state: { variables: [{ name: 'bad_map', type: 'map<string>' }] },
+        agents: [{ id: 'A', instructions: 'a' }],
+        graph: { edges: [], entrypoint: 'A', terminals: ['A'] }
+      };
+      const adapter = new LangGraphAdapter(ir);
+      const code = adapter.generate();
+      assert.ok(code.includes('bad_map: Optional[Any]'));
+    });
   });
 
   describe('Agent Node Functions', () => {
@@ -388,6 +416,21 @@ describe('LangGraph Adapter', () => {
       assert.ok(compat.supported);
       assert.strictEqual(compat.issues.length, 0);
     });
+
+    it('should report missing agents', () => {
+      const ir = {
+        version: '0.1.0',
+        workflow: { name: 'Test', config: {} },
+        state: { variables: [] },
+        agents: [],
+        graph: { edges: [], entrypoint: 'start', terminals: ['end'] },
+      };
+      const adapter = new LangGraphAdapter(ir);
+      const compat = adapter.checkCompatibility();
+      assert.ok(!compat.supported);
+      assert.ok(compat.issues.some(i => i.includes('No agents defined')));
+      assert.throws(() => adapter.generate(), /IR is not compatible/);
+    });
   });
 
   describe('Full Example Compilation', () => {
@@ -512,6 +555,35 @@ describe('LangGraph Adapter', () => {
       assert.throws(() => {
         new LangGraphAdapter(ir, { input: {} }).generate();
       }, /Missing required initial state variable/);
+    });
+
+    it('should convert object properties and fallback to None', () => {
+      const ir = compileToIR(`
+        workflow "Test" {
+          state {
+            obj: map[string, int]
+            undef: string
+          }
+          agent A { instructions: "test" }
+          flow { start -> A  A -> end }
+        }
+      `);
+      
+      const adapter = new LangGraphAdapter(ir, {
+        input: {
+          obj: { k1: 1, k2: 2 },
+          undef: null
+        }
+      });
+      const code = adapter.generate();
+      assert.ok(code.includes('"obj": {"k1": 1, "k2": 2}'));
+      assert.ok(code.includes('"undef": None'));
+    });
+
+    it('should fallback to JSON.stringify for unsupported types like Symbol', () => {
+      const adapter = new LangGraphAdapter({});
+      const result = adapter._toPythonLiteral(Symbol("test"));
+      assert.strictEqual(result, undefined);
     });
   });
 

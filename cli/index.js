@@ -490,8 +490,8 @@ export function getPythonCommand() {
  * oaf auth
  * Interactive prompt to save API keys to ~/.oaf/.env
  */
-function cmdAuth() {
-  setupAuth();
+async function cmdAuth() {
+  await setupAuth();
 }
 
 /**
@@ -542,7 +542,7 @@ function cmdGraph(filePath) {
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
-function main() {
+async function main() {
   const rawArgs = process.argv.slice(2);
 
   if (rawArgs.length === 0 || rawArgs.includes('--help') || rawArgs.includes('-h')) {
@@ -560,7 +560,7 @@ function main() {
   const filePath = positional[1];
 
   if (command === 'auth') {
-    cmdAuth();
+    await cmdAuth();
     return;
   }
 
@@ -603,5 +603,8 @@ try {
 } catch (e) {}
 
 if (isMain) {
-  main();
+  main().catch(e => {
+    console.error(e);
+    process.exit(1);
+  });
 }

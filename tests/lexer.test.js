@@ -4,9 +4,16 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Lexer, TokenType, LexerError } from '../parser/lexer.js';
+import { Lexer, TokenType, LexerError, Token } from '../parser/lexer.js';
 
 describe('Lexer', () => {
+
+  describe('Token', () => {
+    it('should format toString correctly', () => {
+      const token = new Token(TokenType.IDENTIFIER, 'my_agent', 1, 5);
+      assert.strictEqual(token.toString(), 'Token(IDENTIFIER, "my_agent", 1:5)');
+    });
+  });
 
   describe('Keywords', () => {
     it('should tokenize all keywords', () => {
@@ -80,6 +87,11 @@ describe('Lexer', () => {
 
     it('should throw on unterminated string', () => {
       const lexer = new Lexer('"unterminated');
+      assert.throws(() => lexer.tokenize(), LexerError);
+    });
+
+    it('should throw on unterminated triple string', () => {
+      const lexer = new Lexer('"""\nunterminated');
       assert.throws(() => lexer.tokenize(), LexerError);
     });
   });

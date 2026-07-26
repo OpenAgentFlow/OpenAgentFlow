@@ -47,7 +47,7 @@ OpenAgentFlow uses zero core npm dependencies for the compiler. Simply run the n
 npm test
 # Or directly: node --test tests/**/*.test.js
 ```
-All 163+ tests should pass in under a second!
+All 193+ tests should pass in under a second!
 
 ### 🧪 Test Suite Breakdown
 1. **Core Pipeline Suites (`lexer`, `parser`, `validator`, `compiler`)**: Verifies exact tokenization, syntax tree construction, cyclic/unreachable graph diagnostics, and clean AST-to-IR compilation.

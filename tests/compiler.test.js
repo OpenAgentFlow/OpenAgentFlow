@@ -6,6 +6,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compiler } from '../compiler/compiler.js';
 import { VERSION } from '../compiler/index.js';
+import { Program, WorkflowDecl, AgentBlock, TypeExpr } from '../parser/ast.js';
+import { SemanticValidator } from '../compiler/validator.js';
+import { IRGenerator } from '../compiler/ir-generator.js';
+import { getVersion, clearVersionCache } from '../compiler/version.js';
+import { renameSync } from 'fs';
+import { resolve } from 'path';
 
 describe('Compiler (End-to-End)', () => {
 
@@ -131,4 +137,62 @@ describe('Compiler (End-to-End)', () => {
     });
   });
 
+  describe('Semantic Validator & IR Generator (Direct AST)', () => {
+    it('should handle empty workflow name', () => {
+      const workflow = new WorkflowDecl('', null, [new AgentBlock('A', { instructions: 'a' }, 1, 1)], null, null, 1, 1);
+      const ast = new Program(workflow);
+      const validator = new SemanticValidator(ast);
+      const result = validator.validate();
+      assert.strictEqual(result.isValid, false);
+      assert.ok(result.errors.some(e => e.message.includes('Workflow name must be a non-empty string')));
+      assert.strictEqual(result.errors[0].toString(), '[ERROR] 1:1 — Workflow name must be a non-empty string');
+    });
+
+    it('should handle missing flow block', () => {
+      const workflow = new WorkflowDecl('Test', null, [new AgentBlock('A', { instructions: 'a' }, 1, 1)], null, null, 1, 1);
+      const ast = new Program(workflow);
+      const validator = new SemanticValidator(ast);
+      const result = validator.validate();
+      assert.strictEqual(result.isValid, false);
+      assert.ok(result.errors.some(e => e.message.includes('Missing flow block')));
+    });
+
+    it('should handle reserved keywords as agent identifier', () => {
+      const workflow = new WorkflowDecl('Test', null, [new AgentBlock('start', { instructions: 'a' }, 1, 1)], null, null, 1, 1);
+      const ast = new Program(workflow);
+      const validator = new SemanticValidator(ast);
+      const result = validator.validate();
+      assert.strictEqual(result.isValid, false);
+      assert.ok(result.errors.some(e => e.message.includes('Reserved keyword used as agent identifier: "start"')));
+    });
+
+    it('should handle IR Generator unknown type', () => {
+      const irGen = new IRGenerator(null);
+      const type = new TypeExpr('unknown_kind', 1, 1);
+      assert.strictEqual(irGen.serializeType(type), 'unknown');
+    });
+
+    it('should handle IR Generator missing flow block', () => {
+      const irGen = new IRGenerator(null);
+      assert.deepStrictEqual(irGen.buildGraph(null), { edges: [], entrypoint: null, terminals: [] });
+    });
+  });
+
+  describe('Version Utility', () => {
+    it('should fallback to 0.1.0 when package.json is unreadable', () => {
+      const pkgPath = resolve(process.cwd(), 'package.json');
+      const backupPath = resolve(process.cwd(), 'package.json.bak');
+      
+      clearVersionCache();
+      renameSync(pkgPath, backupPath);
+      
+      try {
+        const ver = getVersion();
+        assert.strictEqual(ver, '0.1.0');
+      } finally {
+        renameSync(backupPath, pkgPath);
+        clearVersionCache();
+      }
+    });
+  });
 });

@@ -302,6 +302,23 @@ describe('SemanticValidator', () => {
       assert.ok(result.errors.some(e => e.message.includes('Missing start edge')));
     });
 
+    it('should detect multiple start edges', () => {
+      const result = validate(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          agent B { instructions: "b" }
+          flow {
+            start -> A
+            start -> B
+            A -> end
+            B -> end
+          }
+        }
+      `);
+      assert.ok(!result.isValid);
+      assert.ok(result.errors.some(e => e.message.includes('Multiple start edges')));
+    });
+
     it('should detect missing end edge', () => {
       const result = validate(`
         workflow "Test" {
