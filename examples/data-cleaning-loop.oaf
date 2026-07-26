@@ -1,0 +1,44 @@
+workflow "Data Cleaning Pipeline" {
+    config {
+        max_iterations: 5
+    }
+
+    state {
+        raw_data: string @required
+        cleaned_data: string
+        validation_errors: string
+        is_valid: bool
+        processing_attempts: int @reducer("add")
+    }
+
+    agent Cleaner {
+        instructions: """
+        You are a data cleaning expert.
+        Take the raw_data (or the current cleaned_data if we are retrying) and fix any formatting issues.
+        Remove extraneous whitespace, ensure JSON structure if applicable, and fix obvious typos.
+        Output the result as cleaned_data and increment processing_attempts by 1.
+        """
+        model: "gemma-4-26b-a4b-it"
+        inputs: [raw_data, cleaned_data]
+        outputs: [cleaned_data, processing_attempts]
+    }
+
+    agent Validator {
+        instructions: """
+        Validate the cleaned_data.
+        Check if it's perfectly formatted JSON and contains no 'TODO' or 'FIXME' comments.
+        If it's valid, set is_valid to true and validation_errors to 'none'.
+        If it's invalid, set is_valid to false and describe the issues in validation_errors.
+        """
+        model: "gemma-4-26b-a4b-it"
+        inputs: [cleaned_data]
+        outputs: [is_valid, validation_errors]
+    }
+
+    flow {
+        start -> Cleaner
+        Cleaner -> Validator
+        Validator -> end when is_valid == true or processing_attempts >= 3
+        Validator -> Cleaner when is_valid == false and processing_attempts < 3
+    }
+}

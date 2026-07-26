@@ -201,13 +201,62 @@ export class Edge extends ASTNode {
   /**
    * @param {string} source
    * @param {string} target
+   * @param {ASTNode|null} condition
    * @param {number} line
    * @param {number} column
    */
-  constructor(source, target, line, column) {
+  constructor(source, target, condition = null, line, column) {
+    if (typeof condition === 'number') {
+      column = line;
+      line = condition;
+      condition = null;
+    }
     super('Edge', line, column);
     this.source = source;
     this.target = target;
+    this.condition = condition;
+  }
+}
+
+// ─── Expressions ───────────────────────────────────────────────────────────────
+
+export class BinaryExpr extends ASTNode {
+  constructor(left, operator, right, line, column) {
+    super('BinaryExpr', line, column);
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+}
+
+export class LogicalExpr extends ASTNode {
+  constructor(left, operator, right, line, column) {
+    super('LogicalExpr', line, column);
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+}
+
+export class UnaryExpr extends ASTNode {
+  constructor(operator, right, line, column) {
+    super('UnaryExpr', line, column);
+    this.operator = operator;
+    this.right = right;
+  }
+}
+
+export class LiteralExpr extends ASTNode {
+  constructor(value, line, column) {
+    super('LiteralExpr', line, column);
+    this.value = value;
+  }
+}
+
+export class IdentifierExpr extends ASTNode {
+  constructor(name, line, column) {
+    super('IdentifierExpr', line, column);
+    this.name = name;
   }
 }
 

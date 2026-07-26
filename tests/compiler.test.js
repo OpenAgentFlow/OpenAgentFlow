@@ -33,7 +33,7 @@ describe('Compiler (End-to-End)', () => {
       assert.strictEqual(result.ir.agents.length, 1);
       assert.strictEqual(result.ir.agents[0].id, 'Greeter');
       assert.strictEqual(result.ir.graph.entrypoint, 'Greeter');
-      assert.deepStrictEqual(result.ir.graph.terminals, ['Greeter']);
+      assert.deepStrictEqual(result.ir.graph.terminals, [{ source: 'Greeter', condition: null }]);
       assert.strictEqual(result.ir.graph.edges.length, 0);
     });
 
@@ -74,7 +74,7 @@ describe('Compiler (End-to-End)', () => {
       assert.strictEqual(result.ir.agents.length, 2);
       assert.strictEqual(result.ir.state.variables.length, 4);
       assert.strictEqual(result.ir.graph.entrypoint, 'Analyst');
-      assert.deepStrictEqual(result.ir.graph.terminals, ['Writer']);
+      assert.deepStrictEqual(result.ir.graph.terminals, [{ source: 'Writer', condition: null }]);
       assert.strictEqual(result.ir.graph.edges.length, 1);
       assert.strictEqual(result.ir.graph.edges[0].source, 'Analyst');
       assert.strictEqual(result.ir.graph.edges[0].target, 'Writer');

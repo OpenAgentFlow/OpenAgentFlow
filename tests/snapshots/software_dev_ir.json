@@ -88,16 +88,21 @@
     "edges": [
       {
         "source": "Analyst",
-        "target": "Architect"
+        "target": "Architect",
+        "condition": null
       },
       {
         "source": "Architect",
-        "target": "Developer"
+        "target": "Developer",
+        "condition": null
       }
     ],
     "entrypoint": "Analyst",
     "terminals": [
-      "Developer"
+      {
+        "source": "Developer",
+        "condition": null
+      }
     ]
   }
 }

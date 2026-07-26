@@ -341,6 +341,45 @@ describe('LangGraph Adapter', () => {
       assert.ok(code.includes('graph.add_edge("Last", END)'));
     });
 
+    it('should generate conditional routing for when clauses', () => {
+      const code = generatePython(`
+        workflow "Test" {
+          state { retry_count: int  status: string }
+          agent A { instructions: "a" outputs: [retry_count, status] }
+          agent B { instructions: "b" inputs: [retry_count, status] }
+          flow {
+            start -> A
+            A -> B when retry_count < 3 and status == "failed"
+            A -> end
+            B -> end
+          }
+        }
+      `);
+      assert.ok(code.includes('def route_A(state: WorkflowState) -> str:'));
+      assert.ok(code.includes('if ((state.get("retry_count") < 3) and (state.get("status") == "failed")): return "B"'));
+      assert.ok(code.includes('return END'));
+      assert.ok(code.includes('graph.add_conditional_edges("A", route_A)'));
+    });
+
+    it('should raise ValueError if conditional edge has no fallback', () => {
+      const code = generatePython(`
+        workflow "Test" {
+          state { flag: bool }
+          agent A { instructions: "a" outputs: [flag] }
+          agent B { instructions: "b" inputs: [flag] }
+          flow {
+            start -> A
+            A -> B when flag == true
+            B -> end
+          }
+        }
+      `);
+      assert.ok(code.includes('def route_A(state: WorkflowState) -> str:'));
+      assert.ok(code.includes('if (state.get("flag") == True): return "B"'));
+      assert.ok(code.includes(`raise ValueError(f"No matching conditional edge from 'A'")`));
+      assert.ok(code.includes('graph.add_conditional_edges("A", route_A)'));
+    });
+
     it('should call graph.compile()', () => {
       const code = generatePython(`
         workflow "Test" {

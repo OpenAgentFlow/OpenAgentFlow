@@ -23,7 +23,10 @@
     "edges": [],
     "entrypoint": "Greeter",
     "terminals": [
-      "Greeter"
+      {
+        "source": "Greeter",
+        "condition": null
+      }
     ]
   }
 }

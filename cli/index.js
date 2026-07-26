@@ -494,9 +494,27 @@ async function cmdAuth() {
   await setupAuth();
 }
 
+function irConditionToString(expr) {
+  if (!expr) return '';
+  if (expr.type === 'BinaryExpr' || expr.type === 'LogicalExpr') {
+    return `${irConditionToString(expr.left)} ${expr.operator} ${irConditionToString(expr.right)}`;
+  }
+  if (expr.type === 'UnaryExpr') {
+    return `${expr.operator} ${irConditionToString(expr.right)}`;
+  }
+  if (expr.type === 'LiteralExpr') {
+    if (typeof expr.value === 'string') return `'${expr.value}'`;
+    return String(expr.value);
+  }
+  if (expr.type === 'IdentifierExpr') {
+    return expr.name;
+  }
+  return '';
+}
+
 /**
  * oaf graph <file>
- * Compile and output the workflow graph in Graphviz DOT format.
+ * Generate a Graphviz DOT representation of the workflow.
  */
 function cmdGraph(filePath) {
   const { result, filename } = compileSource(filePath);
@@ -505,7 +523,7 @@ function cmdGraph(filePath) {
   lines.push('digraph workflow {');
   lines.push('  rankdir=TB;');
   lines.push('  node [shape=box, style="rounded,filled", fillcolor="#e8f4f8", fontname="sans-serif"];');
-  lines.push('  edge [color="#555555"];');
+  lines.push('  edge [color="#555555", fontname="sans-serif", fontsize=10];');
   lines.push('');
   lines.push(`  // Workflow: ${ir.workflow.name}`);
   lines.push('  __start__ [label="START", shape=circle, fillcolor="#4CAF50", fontcolor=white, style=filled];');
@@ -527,12 +545,16 @@ function cmdGraph(filePath) {
 
   // Agent-to-agent edges
   for (const edge of ir.graph.edges) {
-    lines.push(`  ${edge.source} -> ${edge.target};`);
+    const labelText = irConditionToString(edge.condition);
+    const label = edge.condition ? ` [label="${labelText}"]` : '';
+    lines.push(`  ${edge.source} -> ${edge.target}${label};`);
   }
 
   // Terminal → end
   for (const terminal of ir.graph.terminals) {
-    lines.push(`  ${terminal} -> __end__;`);
+    const labelText = irConditionToString(terminal.condition);
+    const label = terminal.condition ? ` [label="${labelText}"]` : '';
+    lines.push(`  ${terminal.source} -> __end__${label};`);
   }
 
   lines.push('}');

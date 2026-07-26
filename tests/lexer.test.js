@@ -39,6 +39,17 @@ describe('Lexer', () => {
         TokenType.BOOL_TYPE, TokenType.LIST_TYPE, TokenType.MAP_TYPE,
       ]);
     });
+
+    it('should tokenize logical and conditional keywords', () => {
+      const source = 'when and or not';
+      const lexer = new Lexer(source);
+      const tokens = lexer.tokenize();
+
+      const types = tokens.map(t => t.type).filter(t => t !== TokenType.EOF);
+      assert.deepStrictEqual(types, [
+        TokenType.WHEN, TokenType.AND, TokenType.OR, TokenType.NOT
+      ]);
+    });
   });
 
   describe('Identifiers', () => {
@@ -125,6 +136,17 @@ describe('Lexer', () => {
         TokenType.LBRACKET, TokenType.RBRACKET,
         TokenType.LPAREN, TokenType.RPAREN,
         TokenType.COLON, TokenType.COMMA, TokenType.ARROW, TokenType.AT,
+      ]);
+    });
+
+    it('should tokenize comparison operators', () => {
+      const lexer = new Lexer('== != < > <= >=');
+      const tokens = lexer.tokenize();
+      const types = tokens.map(t => t.type).filter(t => t !== TokenType.EOF);
+      assert.deepStrictEqual(types, [
+        TokenType.EQ, TokenType.NEQ,
+        TokenType.LT, TokenType.GT,
+        TokenType.LTE, TokenType.GTE,
       ]);
     });
   });

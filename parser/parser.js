@@ -22,6 +22,11 @@ import {
   Edge,
   ConfigBlock,
   ConfigEntry,
+  BinaryExpr,
+  LogicalExpr,
+  UnaryExpr,
+  LiteralExpr,
+  IdentifierExpr,
 } from './ast.js';
 
 // ─── Parser Error ──────────────────────────────────────────────────────────────
@@ -429,7 +434,11 @@ export class Parser {
       const source = this.parseFlowNode('source');
       this.expect(TokenType.ARROW, 'expected "->" in flow edge');
       const target = this.parseFlowNode('target');
-      edges.push(new Edge(source, target, sourceToken.line, sourceToken.column));
+      let condition = null;
+      if (this.match(TokenType.WHEN)) {
+        condition = this.parseExpression();
+      }
+      edges.push(new Edge(source, target, condition, sourceToken.line, sourceToken.column));
     }
 
     this.expect(TokenType.RBRACE, 'expected "}" to close flow block');
@@ -457,6 +466,95 @@ export class Parser {
     }
 
     throw new ParseError(`Expected agent identifier, "start", or "end" as flow ${role}`, token);
+  }
+
+  // ── Expressions ─────────────────────────────────────────────────────────────
+
+  parseExpression() {
+    return this.parseLogicalOr();
+  }
+
+  parseLogicalOr() {
+    let expr = this.parseLogicalAnd();
+    while (this.check(TokenType.OR)) {
+      const opToken = this.advance();
+      const right = this.parseLogicalAnd();
+      expr = new LogicalExpr(expr, opToken.value, right, opToken.line, opToken.column);
+    }
+    return expr;
+  }
+
+  parseLogicalAnd() {
+    let expr = this.parseEquality();
+    while (this.check(TokenType.AND)) {
+      const opToken = this.advance();
+      const right = this.parseEquality();
+      expr = new LogicalExpr(expr, opToken.value, right, opToken.line, opToken.column);
+    }
+    return expr;
+  }
+
+  parseEquality() {
+    let expr = this.parseRelational();
+    while (this.check(TokenType.EQ) || this.check(TokenType.NEQ)) {
+      const opToken = this.advance();
+      const right = this.parseRelational();
+      expr = new BinaryExpr(expr, opToken.value, right, opToken.line, opToken.column);
+    }
+    return expr;
+  }
+
+  parseRelational() {
+    let expr = this.parseUnary();
+    while (
+      this.check(TokenType.LT) ||
+      this.check(TokenType.GT) ||
+      this.check(TokenType.LTE) ||
+      this.check(TokenType.GTE)
+    ) {
+      const opToken = this.advance();
+      const right = this.parseUnary();
+      expr = new BinaryExpr(expr, opToken.value, right, opToken.line, opToken.column);
+    }
+    return expr;
+  }
+
+  parseUnary() {
+    if (this.check(TokenType.NOT)) {
+      const opToken = this.advance();
+      const right = this.parseUnary();
+      return new UnaryExpr(opToken.value, right, opToken.line, opToken.column);
+    }
+    return this.parsePrimary();
+  }
+
+  parsePrimary() {
+    const token = this.current();
+    if (token.type === TokenType.IDENTIFIER) {
+      this.advance();
+      return new IdentifierExpr(token.value, token.line, token.column);
+    }
+    if (token.type === TokenType.INTEGER) {
+      this.advance();
+      return new LiteralExpr(parseInt(token.value, 10), token.line, token.column);
+    }
+    if (token.type === TokenType.FLOAT) {
+      this.advance();
+      return new LiteralExpr(parseFloat(token.value), token.line, token.column);
+    }
+    if (token.type === TokenType.STRING || token.type === TokenType.TRIPLE_STRING) {
+      this.advance();
+      return new LiteralExpr(token.value, token.line, token.column);
+    }
+    if (token.type === TokenType.TRUE) {
+      this.advance();
+      return new LiteralExpr(true, token.line, token.column);
+    }
+    if (token.type === TokenType.FALSE) {
+      this.advance();
+      return new LiteralExpr(false, token.line, token.column);
+    }
+    throw new ParseError(`Expected expression, found "${token.value}"`, token);
   }
 
   // ── Config Block ────────────────────────────────────────────────────────────
