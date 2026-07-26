@@ -40,7 +40,7 @@ describe('Integration: Example Files', () => {
       assert.strictEqual(ir.agents.length, 1);
       assert.strictEqual(ir.agents[0].id, 'Greeter');
       assert.strictEqual(ir.graph.entrypoint, 'Greeter');
-      assert.deepStrictEqual(ir.graph.terminals, ['Greeter']);
+      assert.deepStrictEqual(ir.graph.terminals, [{ source: 'Greeter', condition: null }]);
       assert.strictEqual(ir.graph.edges.length, 0);
       assert.strictEqual(ir.state.variables.length, 0);
     });
@@ -64,7 +64,7 @@ describe('Integration: Example Files', () => {
       assert.ok(agentIds.includes('Synthesizer'));
 
       assert.strictEqual(ir.graph.entrypoint, 'Extractor');
-      assert.deepStrictEqual(ir.graph.terminals, ['Synthesizer']);
+      assert.deepStrictEqual(ir.graph.terminals, [{ source: 'Synthesizer', condition: null }]);
       assert.strictEqual(ir.graph.edges.length, 1);
       assert.strictEqual(ir.graph.edges[0].source, 'Extractor');
       assert.strictEqual(ir.graph.edges[0].target, 'Synthesizer');
@@ -114,7 +114,7 @@ describe('Integration: Example Files', () => {
       const ir = result.ir;
 
       assert.strictEqual(ir.graph.entrypoint, 'Analyst');
-      assert.deepStrictEqual(ir.graph.terminals, ['Developer']);
+      assert.deepStrictEqual(ir.graph.terminals, [{ source: 'Developer', condition: null }]);
       assert.strictEqual(ir.graph.edges.length, 2);
     });
   });

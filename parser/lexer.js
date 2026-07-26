@@ -18,6 +18,10 @@ export const TokenType = Object.freeze({
   CONFIG:      'CONFIG',
   START:       'START',
   END:         'END',
+  WHEN:        'WHEN',
+  AND:         'AND',
+  OR:          'OR',
+  NOT:         'NOT',
 
   // Type keywords
   STRING_TYPE: 'STRING_TYPE',
@@ -38,7 +42,7 @@ export const TokenType = Object.freeze({
   FLOAT:       'FLOAT',
   IDENTIFIER:  'IDENTIFIER',
 
-  // Punctuation
+  // Punctuation & Operators
   LBRACE:      'LBRACE',      // {
   RBRACE:      'RBRACE',      // }
   LBRACKET:    'LBRACKET',    // [
@@ -49,6 +53,12 @@ export const TokenType = Object.freeze({
   COMMA:       'COMMA',       // ,
   ARROW:       'ARROW',       // ->
   AT:          'AT',          // @
+  EQ:          'EQ',          // ==
+  NEQ:         'NEQ',         // !=
+  LT:          'LT',          // <
+  GT:          'GT',          // >
+  LTE:         'LTE',         // <=
+  GTE:         'GTE',         // >=
 
   // Special
   EOF:         'EOF',
@@ -62,6 +72,10 @@ const KEYWORDS = new Map([
   ['config',   TokenType.CONFIG],
   ['start',    TokenType.START],
   ['end',      TokenType.END],
+  ['when',     TokenType.WHEN],
+  ['and',      TokenType.AND],
+  ['or',       TokenType.OR],
+  ['not',      TokenType.NOT],
   ['string',   TokenType.STRING_TYPE],
   ['int',      TokenType.INT_TYPE],
   ['float',    TokenType.FLOAT_TYPE],
@@ -152,6 +166,38 @@ export class Lexer {
       if (ch === '-' && this.peek(1) === '>') {
         this.tokens.push(new Token(TokenType.ARROW, '->', this.line, this.column));
         this.advance(2);
+        continue;
+      }
+
+      // Comparison Operators
+      if (ch === '=' && this.peek(1) === '=') {
+        this.tokens.push(new Token(TokenType.EQ, '==', this.line, this.column));
+        this.advance(2);
+        continue;
+      }
+      if (ch === '!' && this.peek(1) === '=') {
+        this.tokens.push(new Token(TokenType.NEQ, '!=', this.line, this.column));
+        this.advance(2);
+        continue;
+      }
+      if (ch === '<') {
+        if (this.peek(1) === '=') {
+          this.tokens.push(new Token(TokenType.LTE, '<=', this.line, this.column));
+          this.advance(2);
+        } else {
+          this.tokens.push(new Token(TokenType.LT, '<', this.line, this.column));
+          this.advance(1);
+        }
+        continue;
+      }
+      if (ch === '>') {
+        if (this.peek(1) === '=') {
+          this.tokens.push(new Token(TokenType.GTE, '>=', this.line, this.column));
+          this.advance(2);
+        } else {
+          this.tokens.push(new Token(TokenType.GT, '>', this.line, this.column));
+          this.advance(1);
+        }
         continue;
       }
 

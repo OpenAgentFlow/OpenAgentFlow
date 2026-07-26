@@ -1,0 +1,43 @@
+workflow "Code Review Loop" {
+    config {
+        max_iterations: 10
+    }
+
+    state {
+        code_snippet: string @required
+        review_feedback: string
+        status: string
+        retry_count: int @reducer("add")
+    }
+
+    agent Reviewer {
+        instructions: """
+        Review the following Python code snippet.
+        If the code is correct, efficient, and well-documented, set status to 'approved' and review_feedback to 'Looks good'.
+        If there are issues, set status to 'rejected' and provide specific review_feedback on what to fix.
+        Respond with valid JSON matching the output variables.
+        """
+        model: "gemma-4-26b-a4b-it"
+        inputs: [code_snippet]
+        outputs: [status, review_feedback]
+    }
+
+    agent Fixer {
+        instructions: """
+        Fix the Python code based on the review_feedback.
+        Output the updated code_snippet.
+        Always output retry_count as 1 (this will increment the total count).
+        Respond with valid JSON matching the output variables.
+        """
+        model: "gemma-4-26b-a4b-it"
+        inputs: [code_snippet, review_feedback]
+        outputs: [code_snippet, retry_count]
+    }
+
+    flow {
+        start -> Reviewer
+        Reviewer -> end when status == "approved" or retry_count >= 3
+        Reviewer -> Fixer when status == "rejected" and retry_count < 3
+        Fixer -> Reviewer
+    }
+}

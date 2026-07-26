@@ -126,11 +126,15 @@ export class IRGenerator {
       if (edge.source === 'start') {
         entrypoint = edge.target;
       } else if (edge.target === 'end') {
-        terminals.push(edge.source);
+        terminals.push({
+          source: edge.source,
+          condition: this.serializeExpression(edge.condition),
+        });
       } else {
         agentEdges.push({
           source: edge.source,
           target: edge.target,
+          condition: this.serializeExpression(edge.condition),
         });
       }
     }
@@ -140,5 +144,31 @@ export class IRGenerator {
       entrypoint,
       terminals,
     };
+  }
+
+  serializeExpression(expr) {
+    if (!expr) return null;
+    if (expr.type === 'BinaryExpr' || expr.type === 'LogicalExpr') {
+      return {
+        type: expr.type,
+        operator: expr.operator,
+        left: this.serializeExpression(expr.left),
+        right: this.serializeExpression(expr.right),
+      };
+    }
+    if (expr.type === 'UnaryExpr') {
+      return {
+        type: expr.type,
+        operator: expr.operator,
+        right: this.serializeExpression(expr.right),
+      };
+    }
+    if (expr.type === 'LiteralExpr') {
+      return { type: expr.type, value: expr.value };
+    }
+    if (expr.type === 'IdentifierExpr') {
+      return { type: expr.type, name: expr.name };
+    }
+    return null;
   }
 }

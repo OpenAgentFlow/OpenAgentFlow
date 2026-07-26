@@ -62,12 +62,16 @@
     "edges": [
       {
         "source": "Extractor",
-        "target": "Synthesizer"
+        "target": "Synthesizer",
+        "condition": null
       }
     ],
     "entrypoint": "Extractor",
     "terminals": [
-      "Synthesizer"
+      {
+        "source": "Synthesizer",
+        "condition": null
+      }
     ]
   }
 }

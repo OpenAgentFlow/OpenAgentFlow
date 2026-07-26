@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Lexer } from '../parser/lexer.js';
 import { Parser, ParseError } from '../parser/parser.js';
-import { StateField, PrimitiveType } from '../parser/ast.js';
+import { StateField, PrimitiveType, Edge } from '../parser/ast.js';
 
 function parse(source) {
   const lexer = new Lexer(source);
@@ -25,6 +25,15 @@ describe('Parser', () => {
       assert.deepStrictEqual(field.options, []);
       assert.strictEqual(field.line, 10);
       assert.strictEqual(field.column, 15);
+    });
+
+    it('should handle Edge backwards compatibility constructor', () => {
+      const edge = new Edge('start', 'end', 10, 15);
+      assert.strictEqual(edge.source, 'start');
+      assert.strictEqual(edge.target, 'end');
+      assert.strictEqual(edge.condition, null);
+      assert.strictEqual(edge.line, 10);
+      assert.strictEqual(edge.column, 15);
     });
   });
 
@@ -229,6 +238,61 @@ describe('Parser', () => {
       assert.strictEqual(edges[2].source, 'B');
       assert.strictEqual(edges[2].target, 'end');
     });
+
+    it('should parse conditional edges with when expressions', () => {
+      const ast = parse(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          agent B { instructions: "b" }
+          flow {
+            start -> A
+            A -> B when retry_count < 3 and status == "failed"
+            B -> end
+          }
+        }
+      `);
+
+      const edges = ast.workflow.flow.edges;
+      assert.strictEqual(edges.length, 3);
+      assert.strictEqual(edges[1].condition.type, 'LogicalExpr');
+      assert.strictEqual(edges[1].condition.operator, 'and');
+      
+      const left = edges[1].condition.left;
+      assert.strictEqual(left.type, 'BinaryExpr');
+      assert.strictEqual(left.operator, '<');
+      assert.strictEqual(left.left.name, 'retry_count');
+      assert.strictEqual(left.right.value, 3);
+      
+      const right = edges[1].condition.right;
+      assert.strictEqual(right.type, 'BinaryExpr');
+      assert.strictEqual(right.operator, '==');
+      assert.strictEqual(right.left.name, 'status');
+      assert.strictEqual(right.right.value, 'failed');
+    });
+
+    it('should parse literal expressions in when clause', () => {
+      const ast = parse(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          flow {
+            start -> A when true or false or 10.5 or "hello"
+          }
+        }
+      `);
+      const edges = ast.workflow.flow.edges;
+      assert.strictEqual(edges[0].condition.type, 'LogicalExpr');
+    });
+
+    it('should parse unary not expressions', () => {
+      const ast = parse(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          flow { start -> A when not valid }
+        }
+      `);
+      const edge = ast.workflow.flow.edges[0];
+      assert.strictEqual(edge.condition.type, 'UnaryExpr');
+    });
   });
 
   describe('Config block', () => {
@@ -402,6 +466,15 @@ describe('Parser', () => {
       assert.throws(() => parse(`
         workflow "Test" {
           agent A { instructions: "a" provider: "   " }
+        }
+      `), ParseError);
+    });
+
+    it('should reject invalid expressions in when clause', () => {
+      assert.throws(() => parse(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          flow { start -> A when == 5 }
         }
       `), ParseError);
     });

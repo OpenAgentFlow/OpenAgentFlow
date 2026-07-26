@@ -396,19 +396,50 @@ export function generateGraphBuilderTemplate({ nodes, entrypoint, edges, termina
   lines.push(`    graph.set_entry_point("${entrypoint}")`);
   lines.push(``);
 
-  if (edges && edges.length > 0) {
-    lines.push(`    # Add edges between agents`);
-    for (const edge of edges) {
-      lines.push(`    graph.add_edge("${edge.source}", "${edge.target}")`);
-    }
-    lines.push(``);
+  const allEdges = [
+    ...(edges || []),
+    ...(terminals || []).map(t => {
+      const source = typeof t === 'string' ? t : t.source;
+      const condition = typeof t === 'string' ? null : t.condition;
+      return { source, target: 'END', condition };
+    })
+  ];
+
+  const groupedEdges = {};
+  for (const edge of allEdges) {
+    if (!groupedEdges[edge.source]) groupedEdges[edge.source] = [];
+    groupedEdges[edge.source].push(edge);
   }
 
-  lines.push(`    # Connect terminal nodes to END`);
-  for (const terminal of terminals) {
-    lines.push(`    graph.add_edge("${terminal}", END)`);
+  if (allEdges.length > 0) {
+    lines.push(`    # Add edges between agents`);
+    for (const [source, edgesFromSource] of Object.entries(groupedEdges)) {
+      const unconditional = edgesFromSource.find(e => !e.condition);
+      const conditional = edgesFromSource.filter(e => e.condition);
+
+      if (conditional.length === 0) {
+        if (unconditional) {
+          const targetStr = unconditional.target === 'END' ? 'END' : `"${unconditional.target}"`;
+          lines.push(`    graph.add_edge("${source}", ${targetStr})`);
+        }
+      } else {
+        lines.push(`    def route_${source}(state: WorkflowState) -> str:`);
+        for (const edge of conditional) {
+          const pyExpr = irToPythonExpr(edge.condition);
+          const targetReturn = edge.target === 'END' ? 'END' : `"${edge.target}"`;
+          lines.push(`        if ${pyExpr}: return ${targetReturn}`);
+        }
+        if (unconditional) {
+          const targetReturn = unconditional.target === 'END' ? 'END' : `"${unconditional.target}"`;
+          lines.push(`        return ${targetReturn}`);
+        } else {
+          lines.push(`        raise ValueError(f"No matching conditional edge from '${source}'")`);
+        }
+        lines.push(`    graph.add_conditional_edges("${source}", route_${source})`);
+        lines.push(``);
+      }
+    }
   }
-  lines.push(``);
   lines.push(`    return graph.compile()`);
   lines.push(``);
   return lines.join('\n');
@@ -499,4 +530,39 @@ export function generateMainTemplate({ workflowName, initialStateFields, require
   lines.push(``);
 
   return lines.join('\n');
+}
+
+export function irToPythonExpr(expr) {
+  if (!expr) return 'True';
+  if (expr.type === 'BinaryExpr') {
+    const opMap = {
+      '==': '==',
+      '!=': '!=',
+      '<': '<',
+      '<=': '<=',
+      '>': '>',
+      '>=': '>=',
+    };
+    return `(${irToPythonExpr(expr.left)} ${opMap[expr.operator]} ${irToPythonExpr(expr.right)})`;
+  }
+  if (expr.type === 'LogicalExpr') {
+    const opMap = {
+      'and': 'and',
+      'or': 'or'
+    };
+    return `(${irToPythonExpr(expr.left)} ${opMap[expr.operator]} ${irToPythonExpr(expr.right)})`;
+  }
+  if (expr.type === 'UnaryExpr') {
+    if (expr.operator === 'not') return `(not ${irToPythonExpr(expr.right)})`;
+    return `(${expr.operator} ${irToPythonExpr(expr.right)})`;
+  }
+  if (expr.type === 'LiteralExpr') {
+    if (typeof expr.value === 'string') return `"${expr.value.replace(/"/g, '\\"')}"`;
+    if (typeof expr.value === 'boolean') return expr.value ? 'True' : 'False';
+    return expr.value;
+  }
+  if (expr.type === 'IdentifierExpr') {
+    return `state.get("${expr.name}")`;
+  }
+  return 'True';
 }

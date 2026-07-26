@@ -257,6 +257,9 @@ export class SemanticValidator {
             edge.line, edge.column
           );
         }
+        if (edge.condition) {
+          this.validateExpression(edge.condition, workflow.state, edge);
+        }
       }
     }
 
@@ -523,6 +526,9 @@ export class SemanticValidator {
    * Detect cycles using DFS coloring (white/gray/black).
    */
   detectCycles(workflow) {
+    const hasMaxIter = workflow.config?.entries.some(e => e.key === 'max_iterations');
+    if (hasMaxIter) return;
+
     const agentIds = workflow.agents.map(a => a.id);
 
     // Build agent-only adjacency (exclude start/end)
@@ -548,11 +554,26 @@ export class SemanticValidator {
       color.set(node, GRAY);
       for (const neighbor of (adj.get(node) ?? [])) {
         if (color.get(neighbor) === GRAY) {
-          cycleNodes.push(neighbor);
-          return true;
+          const stack = [];
+          for (const [k, v] of color.entries()) {
+            if (v === GRAY) stack.push(k);
+          }
+          const cycleSet = new Set(stack);
+          
+          let hasExit = false;
+          for (const edge of workflow.flow.edges) {
+            if (cycleSet.has(edge.source) && !cycleSet.has(edge.target) && edge.condition) {
+              hasExit = true;
+              break;
+            }
+          }
+          
+          if (!hasExit) {
+            cycleNodes.push(...stack);
+            return true;
+          }
         }
         if (color.get(neighbor) === WHITE && dfs(neighbor)) {
-          cycleNodes.push(neighbor);
           return true;
         }
       }
@@ -564,11 +585,29 @@ export class SemanticValidator {
       if (color.get(id) === WHITE) {
         if (dfs(id)) {
           this.result.error(
-            `Cycle detected in flow graph involving: ${[...new Set(cycleNodes)].join(', ')}`,
+            `Cycle detected in flow graph without an exit condition or max_iterations config involving: ${[...new Set(cycleNodes)].join(', ')}`,
             workflow.flow.line, workflow.flow.column
           );
           return;
         }
+      }
+    }
+  }
+
+  validateExpression(expr, stateBlock, edge) {
+    if (!expr) return;
+    if (expr.type === 'BinaryExpr' || expr.type === 'LogicalExpr') {
+      this.validateExpression(expr.left, stateBlock, edge);
+      this.validateExpression(expr.right, stateBlock, edge);
+    } else if (expr.type === 'UnaryExpr') {
+      this.validateExpression(expr.right, stateBlock, edge);
+    } else if (expr.type === 'IdentifierExpr') {
+      const exists = stateBlock && stateBlock.fields.some(f => f.name === expr.name);
+      if (!exists) {
+        this.result.error(
+          `Undefined state variable "${expr.name}" used in condition on edge ${edge.source} -> ${edge.target}`,
+          expr.line, expr.column
+        );
       }
     }
   }

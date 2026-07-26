@@ -188,6 +188,23 @@ describe('SemanticValidator', () => {
       assert.ok(result.errors.some(e => e.message.includes('Undefined state variable')));
     });
 
+    it('should reject undefined state variables in conditional edges', () => {
+      const result = validate(`
+        workflow "Test" {
+          state { known: int }
+          agent A { instructions: "a" outputs: [known] }
+          agent B { instructions: "b" inputs: [known] }
+          flow {
+            start -> A
+            A -> B when unknown < 3
+            A -> end
+          }
+        }
+      `);
+      assert.ok(!result.isValid);
+      assert.ok(result.errors.some(e => e.message.includes('Undefined state variable "unknown" used in condition')));
+    });
+
     it('should detect invalid temperature', () => {
       const result = validate(`
         workflow "Test" {
@@ -362,7 +379,7 @@ describe('SemanticValidator', () => {
       assert.ok(result.errors.some(e => e.message.includes('Duplicate edge')));
     });
 
-    it('should detect self-loops', () => {
+    it('should reject self-loops without exit condition or max_iterations', () => {
       const result = validate(`
         workflow "Test" {
           agent A { instructions: "a" }
@@ -374,7 +391,60 @@ describe('SemanticValidator', () => {
         }
       `);
       assert.ok(!result.isValid);
-      assert.ok(result.errors.some(e => e.message.includes('Self-loop')));
+      assert.ok(result.errors.some(e => e.message.includes('Cycle detected')));
+    });
+
+    it('should reject cycles without exit condition or max_iterations', () => {
+      const result = validate(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          agent B { instructions: "b" }
+          flow {
+            start -> A
+            A -> B
+            B -> A
+            A -> end
+          }
+        }
+      `);
+      assert.ok(!result.isValid);
+      assert.ok(result.errors.some(e => e.message.includes('Cycle detected in flow graph without an exit condition')));
+    });
+
+    it('should allow cycles if there is an exit condition', () => {
+      const result = validate(`
+        workflow "Test" {
+          state { retry_count: int }
+          agent A { instructions: "a" outputs: [retry_count] }
+          agent B { instructions: "b" inputs: [retry_count] }
+          flow {
+            start -> A
+            A -> B
+            B -> A when retry_count < 3
+            B -> end when retry_count >= 3
+          }
+        }
+      `);
+      assert.ok(result.isValid, `Expected valid but got: ${result.errors.map(e => e.message).join(', ')}`);
+    });
+
+    it('should allow cycles if max_iterations is set', () => {
+      const result = validate(`
+        workflow "Test" {
+          agent A { instructions: "a" }
+          agent B { instructions: "b" }
+          flow {
+            start -> A
+            A -> B
+            B -> A
+            B -> end
+          }
+          config {
+            max_iterations: 5
+          }
+        }
+      `);
+      assert.ok(result.isValid);
     });
 
     it('should reject incoming edge to start node', () => {
