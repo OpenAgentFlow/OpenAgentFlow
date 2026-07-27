@@ -522,12 +522,14 @@ function cmdGraph(filePath) {
   const lines = [];
   lines.push('digraph workflow {');
   lines.push('  rankdir=TB;');
-  lines.push('  node [shape=box, style="rounded,filled", fillcolor="#e8f4f8", fontname="sans-serif"];');
-  lines.push('  edge [color="#555555", fontname="sans-serif", fontsize=10];');
+  lines.push('  nodesep=1.6;');
+  lines.push('  ranksep=0.8;');
+  lines.push('  node [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#0683b4", fontname="Segoe UI, Helvetica, sans-serif", fontcolor="#004c6d", margin="0.25,0.15"];');
+  lines.push('  edge [color="#046790", fontname="Segoe UI, Helvetica, sans-serif", fontsize=10, fontcolor="#004c6d"];');
   lines.push('');
   lines.push(`  // Workflow: ${ir.workflow.name}`);
-  lines.push('  __start__ [label="START", shape=circle, fillcolor="#4CAF50", fontcolor=white, style=filled];');
-  lines.push('  __end__   [label="END",   shape=doublecircle, fillcolor="#f44336", fontcolor=white, style=filled];');
+  lines.push('  __start__ [label="START", shape=circle, fillcolor="#06a0d9", color="#06a0d9", fontcolor=white, style=filled, fontname="Segoe UI, Helvetica, sans-serif", margin="0.25,0.15"];');
+  lines.push('  __end__   [label="END",   shape=doublecircle, fillcolor="#00bfff", color="#00bfff", fontcolor=white, style=filled, fontname="Segoe UI, Helvetica, sans-serif", margin="0.25,0.15"];');
   lines.push('');
 
   // Agent nodes
