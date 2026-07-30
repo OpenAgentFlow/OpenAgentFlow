@@ -471,6 +471,17 @@ describe('LangGraph Adapter', () => {
       assert.ok(compat.issues.some(i => i.includes('No agents defined')));
       assert.throws(() => adapter.generate(), /IR is not compatible/);
     });
+
+    it('should expose "LangGraph" as its targetName', () => {
+      const ir = compileToIR(`
+        workflow "Test" {
+          agent A { instructions: "test" }
+          flow { start -> A  A -> end }
+        }
+      `);
+      const adapter = new LangGraphAdapter(ir);
+      assert.strictEqual(adapter.targetName, 'LangGraph');
+    });
   });
 
   describe('Full Example Compilation', () => {
