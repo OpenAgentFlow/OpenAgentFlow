@@ -1234,22 +1234,9 @@ Add the two getters:
   get mainTemplate() { return 'workflow.py'; }
 ```
 
-Replace the `generate()` override with one that renders the stub and passes the not-yet-migrated sections through `{{ REMAINING }}`:
+**Delete the `generate()` override entirely.** `BaseAdapter.generate()` already does exactly what this adapter needs — check compatibility, validate input, render the main template with `buildTokens()`. Re-declaring an identical copy here would be duplication with no purpose. Replace it with `buildTokens()`:
 
 ```js
-  generate() {
-    const compat = this.checkCompatibility();
-    if (!compat.supported) {
-      throw new Error(
-        `IR is not compatible with ${this.targetName}: ${compat.issues.join('; ')}`
-      );
-    }
-    if (this.options.input) {
-      this.validateInput(this.options.input);
-    }
-    return this.renderTemplate(this.mainTemplate, this.buildTokens());
-  }
-
   buildTokens() {
     const model = this._buildGenerationModel();
 
@@ -1272,8 +1259,6 @@ Replace the `generate()` override with one that renders the stub and passes the 
     };
   }
 ```
-
-Note `generate()` is now identical to `BaseAdapter.generate()`. Leave the override in place for now; Task 9 deletes it once nothing else differs.
 
 Delete the now-unused `generateHeaderTemplate` and `generateImportsTemplate` from the import list at the top of the file.
 
@@ -1747,7 +1732,7 @@ Add to the token map and delete both the `remaining` variable and the `REMAINING
       REQUIRED_GUARD: this._requiredGuard(model.main.requiredFields),
 ```
 
-Delete the `generate()` override — it is now byte-identical to `BaseAdapter.generate()`. Delete the entire `import { ... } from './templates.js'` statement.
+Delete the entire `import { ... } from './templates.js'` statement.
 
 - [ ] **Step 4: Delete templates.js**
 
