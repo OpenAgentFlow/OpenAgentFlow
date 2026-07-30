@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
 import { VERSION } from '../compiler/index.js';
+import { toPythonLiteral, pythonLiteralOrNone } from '../adapters/lang/python.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -620,9 +621,14 @@ describe('LangGraph Adapter', () => {
     });
 
     it('should fallback to JSON.stringify for unsupported types like Symbol', () => {
-      const adapter = new LangGraphAdapter({});
-      const result = adapter._toPythonLiteral(Symbol("test"));
+      const result = toPythonLiteral(Symbol("test"));
       assert.strictEqual(result, undefined);
+    });
+
+    it('should render pythonLiteralOrNone as a quoted string when present, or None when absent', () => {
+      assert.strictEqual(pythonLiteralOrNone('gpt-4o-mini'), '"gpt-4o-mini"');
+      assert.strictEqual(pythonLiteralOrNone(null), 'None');
+      assert.strictEqual(pythonLiteralOrNone(undefined), 'None');
     });
   });
 

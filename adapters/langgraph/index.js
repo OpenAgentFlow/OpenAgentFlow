@@ -17,87 +17,13 @@ import {
   generateGraphBuilderTemplate,
   generateMainTemplate,
 } from './templates.js';
-
-// ─── IR Type → Python Type Mapping ─────────────────────────────────────────────
-
-const PRIMITIVE_TYPE_MAP = {
-  string: 'str',
-  int:    'int',
-  float:  'float',
-  bool:   'bool',
-};
-
-/**
- * Convert an IR type descriptor (e.g. "list<string>", "map<string,int>")
- * into a Python typing annotation.
- * @param {string} irType
- * @returns {string}
- */
-function irTypeToPython(irType) {
-  // Primitives
-  if (PRIMITIVE_TYPE_MAP[irType]) {
-    return PRIMITIVE_TYPE_MAP[irType];
-  }
-
-  // list<T>
-  const listMatch = irType.match(/^list<(.+)>$/);
-  if (listMatch) {
-    return `List[${irTypeToPython(listMatch[1])}]`;
-  }
-
-  // map<K,V> — need to handle nested generics carefully
-  const mapMatch = irType.match(/^map<(.+)>$/);
-  if (mapMatch) {
-    const inner = mapMatch[1];
-    const splitIdx = findTopLevelComma(inner);
-    if (splitIdx !== -1) {
-      const keyType = inner.substring(0, splitIdx);
-      const valType = inner.substring(splitIdx + 1);
-      return `Dict[${irTypeToPython(keyType)}, ${irTypeToPython(valType)}]`;
-    }
-  }
-
-  // Fallback
-  return 'Any';
-}
-
-/**
- * Find the index of the top-level comma in a type string,
- * respecting nested angle brackets.
- */
-function findTopLevelComma(str) {
-  let depth = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === '<') depth++;
-    else if (str[i] === '>') depth--;
-    else if (str[i] === ',' && depth === 0) return i;
-  }
-  return -1;
-}
-
-/**
- * Convert an agent ID to a valid Python function name (snake_case).
- * @param {string} id
- * @returns {string}
- */
-function toSnakeCase(id) {
-  return id
-    .replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '_' : '') + c.toLowerCase())
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .toLowerCase();
-}
-
-/**
- * Escape a string for use inside a Python triple-quoted string.
- * @param {string} str
- * @returns {string}
- */
-function escapePythonTripleQuote(str) {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"""/g, '\\"\\"\\"');
-}
+import {
+  irTypeToPython,
+  pythonDefault,
+  toPythonLiteral,
+  escapeTripleQuote,
+  toSnakeCase,
+} from '../lang/python.js';
 
 // ─── LangGraph Adapter ────────────────────────────────────────────────────────
 
@@ -225,7 +151,7 @@ export class LangGraphAdapter {
       model: agent.model ?? null,
       temperature: agent.temperature != null ? agent.temperature : 0.7,
       provider: agent.provider ?? null,
-      escapedInstructions: escapePythonTripleQuote(agent.instructions),
+      escapedInstructions: escapeTripleQuote(agent.instructions),
       inputs: agent.inputs ?? [],
       outputs: agent.outputs ?? [],
     }));
@@ -250,11 +176,11 @@ export class LangGraphAdapter {
         const isRequired = (v.options ?? []).some(opt => opt.name === 'required');
         let defaultVal;
         if (inputData[v.name] !== undefined) {
-          defaultVal = this._toPythonLiteral(inputData[v.name]);
+          defaultVal = toPythonLiteral(inputData[v.name]);
         } else if (isRequired) {
           defaultVal = 'None';
         } else {
-          defaultVal = this._pythonDefault(v.type);
+          defaultVal = pythonDefault(v.type);
         }
         return {
           name: v.name,
@@ -273,25 +199,6 @@ export class LangGraphAdapter {
       graphBuilder,
       main,
     };
-  }
-
-  /**
-   * Convert a JavaScript value to a Python literal string.
-   */
-  _toPythonLiteral(val) {
-    if (val === null || val === undefined) return 'None';
-    if (typeof val === 'boolean') return val ? 'True' : 'False';
-    if (typeof val === 'number') return String(val);
-    if (typeof val === 'string') return JSON.stringify(val);
-    if (Array.isArray(val)) {
-      const items = val.map(item => this._toPythonLiteral(item));
-      return `[${items.join(', ')}]`;
-    }
-    if (typeof val === 'object') {
-      const entries = Object.entries(val).map(([k, v]) => `${JSON.stringify(k)}: ${this._toPythonLiteral(v)}`);
-      return `{${entries.join(', ')}}`;
-    }
-    return JSON.stringify(val);
   }
 
   /**
@@ -346,18 +253,5 @@ export class LangGraphAdapter {
         }
       }
     }
-  }
-
-  /**
-   * Return a Python default value for an IR type descriptor.
-   */
-  _pythonDefault(irType) {
-    if (irType === 'string') return '""';
-    if (irType === 'int') return '0';
-    if (irType === 'float') return '0.0';
-    if (irType === 'bool') return 'False';
-    if (irType.startsWith('list<')) return '[]';
-    if (irType.startsWith('map<')) return '{}';
-    return 'None';
   }
 }

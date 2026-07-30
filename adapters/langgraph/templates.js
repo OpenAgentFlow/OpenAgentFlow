@@ -7,6 +7,7 @@
  */
 
 import { pythonProviderInferenceLines } from '../../compiler/providers.js';
+import { irToPythonExpr } from '../lang/python.js';
 
 /**
  * Generate the Python file header comment block.
@@ -514,39 +515,4 @@ export function generateMainTemplate({ workflowName, initialStateFields, require
   lines.push(``);
 
   return lines.join('\n');
-}
-
-export function irToPythonExpr(expr) {
-  if (!expr) return 'True';
-  if (expr.type === 'BinaryExpr') {
-    const opMap = {
-      '==': '==',
-      '!=': '!=',
-      '<': '<',
-      '<=': '<=',
-      '>': '>',
-      '>=': '>=',
-    };
-    return `(${irToPythonExpr(expr.left)} ${opMap[expr.operator]} ${irToPythonExpr(expr.right)})`;
-  }
-  if (expr.type === 'LogicalExpr') {
-    const opMap = {
-      'and': 'and',
-      'or': 'or'
-    };
-    return `(${irToPythonExpr(expr.left)} ${opMap[expr.operator]} ${irToPythonExpr(expr.right)})`;
-  }
-  if (expr.type === 'UnaryExpr') {
-    if (expr.operator === 'not') return `(not ${irToPythonExpr(expr.right)})`;
-    return `(${expr.operator} ${irToPythonExpr(expr.right)})`;
-  }
-  if (expr.type === 'LiteralExpr') {
-    if (typeof expr.value === 'string') return `"${expr.value.replace(/"/g, '\\"')}"`;
-    if (typeof expr.value === 'boolean') return expr.value ? 'True' : 'False';
-    return expr.value;
-  }
-  if (expr.type === 'IdentifierExpr') {
-    return `state.get("${expr.name}")`;
-  }
-  return 'True';
 }
