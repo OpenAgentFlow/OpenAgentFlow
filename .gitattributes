@@ -1,0 +1,5 @@
+# Force LF line endings for files whose content is generated/compared
+# programmatically (JSON.stringify emits LF). Without this, core.autocrlf=true
+# checks these out as CRLF on Windows and every snapshot test fails on a
+# byte-for-byte diff that has nothing to do with the code under test.
+*.json text eol=lf

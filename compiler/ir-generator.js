@@ -8,6 +8,7 @@
  */
 
 import { VERSION } from './version.js';
+import { inferProviderFromModel } from './providers.js';
 
 const IR_VERSION = VERSION;
 
@@ -91,12 +92,7 @@ export class IRGenerator {
 
   buildAgents(agents) {
     return agents.map(agent => {
-      let provider = agent.provider ?? null;
-      if (!provider && agent.model) {
-        if (agent.model.startsWith('claude-')) provider = 'anthropic';
-        else if (agent.model.startsWith('gpt-') || agent.model.startsWith('o1') || agent.model.startsWith('o3')) provider = 'openai';
-        else if (agent.model.startsWith('gemini-') || agent.model.startsWith('gemma-')) provider = 'gemini';
-      }
+      const provider = agent.provider ?? inferProviderFromModel(agent.model);
       return {
         id: agent.id,
         instructions: agent.instructions,

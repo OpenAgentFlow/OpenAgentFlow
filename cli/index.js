@@ -26,6 +26,7 @@ import { Compiler } from '../compiler/compiler.js';
 import { VERSION } from '../compiler/version.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
 import { resolveEnvHierarchy, setupAuth, isPlaceholder } from './env.js';
+import { inferProviderFromModel } from '../compiler/providers.js';
 
 // ─── ANSI Colors ───────────────────────────────────────────────────────────────
 
@@ -125,8 +126,6 @@ function parseArgs(args) {
       flags.set('input', args[++i] ?? '');
     } else if (arg === '--output' || arg === '-o') {
       flags.set('output', args[++i] ?? '');
-    } else if (arg === '--demo') {
-      flags.set('demo', 'true');
     } else if (arg.startsWith('--target=')) {
       flags.set('target', arg.split('=')[1]);
     } else if (arg.startsWith('--runtime=')) {
@@ -169,6 +168,35 @@ function compileSource(filePath) {
 }
 
 const SUPPORTED_TARGETS = ['ir', 'langgraph'];
+
+const ENV_KEY_BY_PROVIDER = {
+  anthropic: 'ANTHROPIC_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  gemini: 'GOOGLE_API_KEY',
+};
+
+function printMissingKeyHint() {
+  console.error(`Looked in order of priority:`);
+  console.error(`  1. Inline CLI overrides`);
+  console.error(`  2. Local Project .env`);
+  console.error(`  3. System Environment Variables`);
+  console.error(`  4. Global OAF Store (~/.oaf/.env)`);
+  console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
+}
+
+/**
+ * Verify the API key for a given provider is present and not a placeholder.
+ * Exits the process with a diagnostic message if the key is missing.
+ */
+function checkProviderKey(provider, agentId) {
+  const envKey = ENV_KEY_BY_PROVIDER[provider];
+  if (!envKey) return;
+  if (!process.env[envKey] || isPlaceholder(process.env[envKey])) {
+    console.error(`${colors.red}Error:${colors.reset} Missing required API key "${envKey}" for agent "${agentId}" (provider: ${provider}).`);
+    printMissingKeyHint();
+    process.exit(1);
+  }
+}
 
 // ─── Commands ──────────────────────────────────────────────────────────────────
 
@@ -285,10 +313,6 @@ function cmdCompile(filePath, flags, positional = []) {
  */
 function cmdRun(filePath, flags, positional = []) {
   resolveEnvHierarchy(filePath);
-  // --- DEMO HOOK (Cleanly removable) ---
-  const isDemoMode = flags.get('demo') === 'true' || process.env.OAF_DEMO === '1';
-  if (isDemoMode) process.env.OAF_DEMO = '1';
-  // -------------------------------------
 
   const target = flags.get('target') ?? 'langgraph';
   const rawInputPath = flags.get('input') || positional[2] || null;
@@ -317,66 +341,26 @@ function cmdRun(filePath, flags, positional = []) {
   }
 
   // Pre-flight check 2: API Keys & OAF_DEFAULT_MODEL
-  if (!isDemoMode) {
-    const overrideModel = process.env.OAF_OVERRIDE_MODEL;
-    for (const agent of result.ir.agents) {
-      const targetModel = overrideModel || agent.model;
-      if ((targetModel === null || targetModel === undefined) && !process.env.OAF_DEFAULT_MODEL) {
-        console.error(`${colors.red}Error:${colors.reset} No model specified for agent "${agent.id}" and no default model configured. Please specify a 'model' property in your agent definition or set the OAF_DEFAULT_MODEL environment variable.`);
-        process.exit(1);
-      }
-
-      let provider = overrideModel ? null : agent.provider;
-      if (!provider && targetModel) {
-        if (targetModel.startsWith('claude-')) provider = 'anthropic';
-        else if (targetModel.startsWith('gpt-') || targetModel.startsWith('o1') || targetModel.startsWith('o3')) provider = 'openai';
-        else if (targetModel.startsWith('gemini-') || targetModel.startsWith('gemma-')) provider = 'gemini';
-      }
-
-      if (provider === 'anthropic' && (!process.env.ANTHROPIC_API_KEY || isPlaceholder(process.env.ANTHROPIC_API_KEY))) {
-        console.error(`${colors.red}Error:${colors.reset} Missing required API key "ANTHROPIC_API_KEY" for agent "${agent.id}" (provider: anthropic).`);
-        console.error(`Looked in order of priority:`);
-        console.error(`  1. Inline CLI overrides`);
-        console.error(`  2. Local Project .env`);
-        console.error(`  3. System Environment Variables`);
-        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
-        process.exit(1);
-      } else if (provider === 'openai' && (!process.env.OPENAI_API_KEY || isPlaceholder(process.env.OPENAI_API_KEY))) {
-        console.error(`${colors.red}Error:${colors.reset} Missing required API key "OPENAI_API_KEY" for agent "${agent.id}" (provider: openai).`);
-        console.error(`Looked in order of priority:`);
-        console.error(`  1. Inline CLI overrides`);
-        console.error(`  2. Local Project .env`);
-        console.error(`  3. System Environment Variables`);
-        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
-        process.exit(1);
-      } else if (provider === 'gemini' && (!process.env.GOOGLE_API_KEY || isPlaceholder(process.env.GOOGLE_API_KEY))) {
-        console.error(`${colors.red}Error:${colors.reset} Missing required API key "GOOGLE_API_KEY" for agent "${agent.id}" (provider: gemini).`);
-        console.error(`Looked in order of priority:`);
-        console.error(`  1. Inline CLI overrides`);
-        console.error(`  2. Local Project .env`);
-        console.error(`  3. System Environment Variables`);
-        console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-        console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
-        process.exit(1);
-      }
-    }
-
-    const hasValidGoogle = process.env.GOOGLE_API_KEY && !isPlaceholder(process.env.GOOGLE_API_KEY);
-    const hasValidOpenAI = process.env.OPENAI_API_KEY && !isPlaceholder(process.env.OPENAI_API_KEY);
-    const hasValidAnthropic = process.env.ANTHROPIC_API_KEY && !isPlaceholder(process.env.ANTHROPIC_API_KEY);
-
-    if (!hasValidGoogle && !hasValidOpenAI && !hasValidAnthropic && result.ir.agents.length > 0) {
-      console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
-      console.error(`Looked in order of priority:`);
-      console.error(`  1. Inline CLI overrides`);
-      console.error(`  2. Local Project .env`);
-      console.error(`  3. System Environment Variables`);
-      console.error(`  4. Global OAF Store (~/.oaf/.env)`);
-      console.error(`Run \`npx openagentflow auth\` (or \`oaf auth\` if globally installed) to set up your credentials or edit your local .env file.`);
+  const overrideModel = process.env.OAF_OVERRIDE_MODEL;
+  for (const agent of result.ir.agents) {
+    const targetModel = overrideModel || agent.model;
+    if ((targetModel === null || targetModel === undefined) && !process.env.OAF_DEFAULT_MODEL) {
+      console.error(`${colors.red}Error:${colors.reset} No model specified for agent "${agent.id}" and no default model configured. Please specify a 'model' property in your agent definition or set the OAF_DEFAULT_MODEL environment variable.`);
       process.exit(1);
     }
+
+    const provider = overrideModel ? null : (agent.provider ?? inferProviderFromModel(targetModel));
+    checkProviderKey(provider, agent.id);
+  }
+
+  const hasAnyValidKey = Object.values(ENV_KEY_BY_PROVIDER).some(
+    envKey => process.env[envKey] && !isPlaceholder(process.env[envKey])
+  );
+
+  if (!hasAnyValidKey && result.ir.agents.length > 0) {
+    console.error(`${colors.red}Error:${colors.reset} No LLM API key configured. Set GOOGLE_API_KEY (Gemini), OPENAI_API_KEY (OpenAI), or ANTHROPIC_API_KEY (Anthropic) to execute workflows.`);
+    printMissingKeyHint();
+    process.exit(1);
   }
 
   // Generate Python code

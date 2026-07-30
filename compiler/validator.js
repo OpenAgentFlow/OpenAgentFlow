@@ -9,6 +9,8 @@
  * Pipeline: AST → [Validator] → Validated AST + Diagnostics
  */
 
+import { SUPPORTED_PROVIDERS } from './providers.js';
+
 // ─── Diagnostic ────────────────────────────────────────────────────────────────
 
 export class Diagnostic {
@@ -338,9 +340,10 @@ export class SemanticValidator {
     // 4.4 Provider & Model validation
     for (const agent of workflow.agents) {
       if (agent.provider !== null) {
-        if (agent.provider !== 'gemini' && agent.provider !== 'openai' && agent.provider !== 'anthropic') {
+        if (!SUPPORTED_PROVIDERS.includes(agent.provider)) {
+          const supportedList = SUPPORTED_PROVIDERS.map(p => `"${p}"`).join(', ');
           this.result.error(
-            `Invalid provider value for agent "${agent.id}": "${agent.provider}" (must be "gemini", "openai", or "anthropic")`,
+            `Invalid provider value for agent "${agent.id}": "${agent.provider}" (must be ${supportedList})`,
             agent.line, agent.column
           );
         }

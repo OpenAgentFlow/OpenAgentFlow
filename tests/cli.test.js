@@ -283,25 +283,6 @@ describe('CLI', () => {
       assert.ok(stderr.includes('Missing required API key') || stderr.includes('No LLM API key configured'));
     });
 
-    it('should execute successfully via Python subprocess in demo mode', () => {
-      const { stdout, stderr, exitCode } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --demo`, true);
-      if (exitCode === 0) {
-        assert.ok(stdout.includes('Workflow execution completed successfully.'));
-      } else {
-        assert.strictEqual(exitCode, 1);
-        assert.ok(stderr.includes('ModuleNotFoundError') || stderr.includes('pip install langgraph'));
-      }
-    });
-
-    it('should execute successfully with --runtime alias', () => {
-      const { stdout, stderr, exitCode } = runCli(`run "${resolve(EXAMPLES_DIR, 'hello.oaf')}" --runtime langgraph --demo`, true);
-      if (exitCode === 0) {
-        assert.ok(stdout.includes('Workflow execution completed successfully.'));
-      } else {
-        assert.strictEqual(exitCode, 1);
-        assert.ok(stderr.includes('ModuleNotFoundError') || stderr.includes('pip install langgraph'));
-      }
-    });
   });
 
   describe('auth command', () => {
