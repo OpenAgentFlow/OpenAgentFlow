@@ -70,7 +70,7 @@ This buys full highlighting with no `files.associations` entry, no sentinel cons
 One function, no parser, no grammar. Substitution mode is chosen by how the token appears in the stub:
 
 - **Block** — token alone on its line. The line's leading whitespace prefixes *every* line of the value, so injected code lands at the correct depth. This is the only reason a bespoke engine is needed at all: Python is whitespace-significant, and a naive `String.replace` would left-align continuation lines. An empty value removes the line entirely rather than leaving a blank one.
-- **Inline** — token shares its line with other text. Single-line values only; a multi-line value throws.
+- **Inline** — token shares its line with other text. The value is spliced verbatim, with no indentation applied and embedded newlines preserved. This is what makes it correct for payloads inside string literals: agent instructions arrive with real newlines (`parser/lexer.js` produces them via both the `\n` escape in `readString()` and literal newlines in `readTripleString()`), land inside a Python triple-quoted string, and would be silently rewritten if block indentation were applied to them.
 
 Token names are uppercase-only (`[A-Z][A-Z0-9_]*`). That is deliberate: Python f-strings escape literal braces as `{{`/`}}`, and requiring an uppercase identifier between them prevents the engine from matching real Python.
 
@@ -120,8 +120,7 @@ export function clearStubCache() {
  * @param {Record<string, string|string[]>} tokens - Values keyed by token name.
  *   Arrays are joined with newlines.
  * @returns {string} Rendered target-language source.
- * @throws {Error} If a placeholder has no value, a key matches no placeholder,
- *   or a multi-line value is used in inline position.
+ * @throws {Error} If a placeholder has no value, or a key matches no placeholder.
  */
 export function render(stubPath, tokens = {}) {
   const source = loadStub(stubPath);
@@ -166,17 +165,9 @@ function indentBlock(value, indent) {
   return lines.map(line => (line === '' ? '' : indent + line));
 }
 
+// Spliced verbatim: no indentation, newlines preserved. See the inline rule above.
 function substituteInline(stubPath, line, tokens) {
-  return line.replace(TOKEN, (_, name) => {
-    const value = valueOf(stubPath, name, tokens[name]);
-    if (value.includes('\n')) {
-      throw new Error(
-        `{{ ${name} }} in "${stubPath}" is inline but its value spans multiple lines; ` +
-        `place the placeholder on its own line to inject a block`
-      );
-    }
-    return value;
-  });
+  return line.replace(TOKEN, (_, name) => valueOf(stubPath, name, tokens[name]));
 }
 ```
 
