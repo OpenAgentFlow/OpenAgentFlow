@@ -10,8 +10,6 @@
 
 import { fileURLToPath } from 'node:url';
 import {
-  generateStateClassTemplate,
-  generateLlmHelperTemplate,
   generateAgentNodeTemplate,
   generateGraphBuilderTemplate,
   generateMainTemplate,
@@ -20,9 +18,11 @@ import {
   irTypeToPython,
   pythonDefault,
   toPythonLiteral,
+  pythonLiteralOrNone,
   escapeTripleQuote,
   toSnakeCase,
 } from '../lang/python.js';
+import { pythonProviderInferenceLines } from '../../compiler/providers.js';
 import { BaseAdapter } from '../base-adapter.js';
 
 const TEMPLATE_DIR = fileURLToPath(new URL('./templates/', import.meta.url));
@@ -51,20 +51,38 @@ export class LangGraphAdapter extends BaseAdapter {
     // Sections still emitted from JavaScript. Shrinks with each extraction
     // task until Task 9 removes the token entirely.
     const remaining = [
-      generateStateClassTemplate(model.stateClass),
-      generateLlmHelperTemplate(model.llmHelper),
       ...model.agents.map(agent => generateAgentNodeTemplate(agent)),
       generateGraphBuilderTemplate(model.graphBuilder),
       generateMainTemplate(model.main),
     ].join('\n');
 
     return {
-      WORKFLOW_NAME:    model.header.workflowName,
-      COMPILER_VERSION: model.header.version,
-      OPERATOR_IMPORT:  model.imports.needsOperator ? 'import operator' : '',
-      TYPING_IMPORTS:   model.imports.typingImports.sort().join(', '),
-      REMAINING:        remaining,
+      WORKFLOW_NAME:       model.header.workflowName,
+      COMPILER_VERSION:    model.header.version,
+      OPERATOR_IMPORT:     model.imports.needsOperator ? 'import operator' : '',
+      TYPING_IMPORTS:      model.imports.typingImports.sort().join(', '),
+      STATE_FIELDS:        this._stateFields(model.stateClass.fields),
+      DEFAULT_MODEL:       pythonLiteralOrNone(model.llmHelper.defaultModel),
+      DEFAULT_TEMPERATURE: model.llmHelper.defaultTemperature,
+      PROVIDER_INFERENCE:  pythonProviderInferenceLines(''),
+      REMAINING:           remaining,
     };
+  }
+
+  /**
+   * Field declarations for the WorkflowState TypedDict.
+   * Falls back to `pass` — an empty value would delete the class body line
+   * and produce a syntax error.
+   * @returns {string[]}
+   */
+  _stateFields(fields) {
+    if (fields.length === 0) return ['pass'];
+    return fields.map(field => {
+      const comment = field.required ? '  # @required' : '';
+      const baseType = `Optional[${field.pyType}]`;
+      const typeStr = field.reducer ? `Annotated[${baseType}, operator.add]` : baseType;
+      return `${field.name}: ${typeStr}${comment}`;
+    });
   }
 
   /**
