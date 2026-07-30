@@ -8,9 +8,8 @@
  * Pipeline: IR → [LangGraph Adapter] → Python code (LangGraph StateGraph)
  */
 
+import { fileURLToPath } from 'node:url';
 import {
-  generateHeaderTemplate,
-  generateImportsTemplate,
   generateStateClassTemplate,
   generateLlmHelperTemplate,
   generateAgentNodeTemplate,
@@ -26,6 +25,8 @@ import {
 } from '../lang/python.js';
 import { BaseAdapter } from '../base-adapter.js';
 
+const TEMPLATE_DIR = fileURLToPath(new URL('./templates/', import.meta.url));
+
 // ─── LangGraph Adapter ────────────────────────────────────────────────────────
 
 export class LangGraphAdapter extends BaseAdapter {
@@ -34,42 +35,36 @@ export class LangGraphAdapter extends BaseAdapter {
     return 'LangGraph';
   }
 
+  /** Absolute path to the directory holding this adapter's stub files. */
+  get templateDir() { return TEMPLATE_DIR; }
+
+  /** Stub filename rendered as the output document. */
+  get mainTemplate() { return 'workflow.py'; }
+
   /**
-   * Generate LangGraph Python code from the IR.
-   * @returns {string} Generated Python source code
-   * @throws {Error} If the IR contains unsupported features
+   * Map the IR onto template tokens for `workflow.py`.
+   * @returns {Record<string, string|string[]>}
    */
-  generate() {
-    const compat = this.checkCompatibility();
-    if (!compat.supported) {
-      throw new Error(
-        `IR is not compatible with LangGraph: ${compat.issues.join('; ')}`
-      );
-    }
-
-    if (this.options?.input) {
-      this.validateInput(this.options.input);
-    }
-
-    // Build intermediate generation model separating compiler logic from templates
+  buildTokens() {
     const model = this._buildGenerationModel();
 
-    // Compose final Python script using reusable templates
-    const sections = [
-      generateHeaderTemplate(model.header),
-      generateImportsTemplate(model.imports),
+    // Sections still emitted from JavaScript. Shrinks with each extraction
+    // task until Task 9 removes the token entirely.
+    const remaining = [
       generateStateClassTemplate(model.stateClass),
       generateLlmHelperTemplate(model.llmHelper),
-    ];
+      ...model.agents.map(agent => generateAgentNodeTemplate(agent)),
+      generateGraphBuilderTemplate(model.graphBuilder),
+      generateMainTemplate(model.main),
+    ].join('\n');
 
-    for (const agentNode of model.agents) {
-      sections.push(generateAgentNodeTemplate(agentNode));
-    }
-
-    sections.push(generateGraphBuilderTemplate(model.graphBuilder));
-    sections.push(generateMainTemplate(model.main));
-
-    return sections.join('\n');
+    return {
+      WORKFLOW_NAME:    model.header.workflowName,
+      COMPILER_VERSION: model.header.version,
+      OPERATOR_IMPORT:  model.imports.needsOperator ? 'import operator' : '',
+      TYPING_IMPORTS:   model.imports.typingImports.sort().join(', '),
+      REMAINING:        remaining,
+    };
   }
 
   /**
@@ -98,7 +93,6 @@ export class LangGraphAdapter extends BaseAdapter {
     }
     const imports = {
       typingImports: Array.from(typingImports),
-      needsLlmProviders: this.ir.agents.length > 0,
       needsOperator,
     };
 
