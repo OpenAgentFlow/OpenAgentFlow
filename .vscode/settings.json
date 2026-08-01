@@ -1,0 +1,10 @@
+{
+  // Stub files under adapters/*/templates are Python templates containing
+  // {{ TOKEN }} placeholders. They keep the .py extension so editors give
+  // real Python highlighting, but they are not valid Python on their own,
+  // so semantic analysis is disabled for that directory only.
+  "python.analysis.ignore":  ["**/adapters/*/templates/**"],
+  "python.analysis.exclude": ["**/adapters/*/templates/**"],
+  "ruff.exclude":            ["**/adapters/*/templates/**"],
+  "files.associations": {}
+}

@@ -21,9 +21,17 @@ OpenAgentFlow/
 │   └── index.js                    # Compiler public API (re-exports)
 │
 ├── adapters/                       # Target Runtime Adapters
+│   ├── base-adapter.js             # BaseAdapter: shared generate() contract
+│   ├── template-engine.js          # Zero-dependency {{ TOKEN }} stub renderer
+│   ├── lang/
+│   │   └── python.js                # Python formatting helpers (framework-agnostic)
 │   └── langgraph/
-│       ├── index.js                # LangGraph adapter (IR → Python)
-│       └── templates.js            # Python code template generators
+│       ├── index.js                # LangGraph adapter (IR → tokens)
+│       └── templates/              # Python stub files rendered by the template engine
+│           ├── workflow.py          # Main stub: header, state, LLM helper, graph, main
+│           ├── agent_node.py        # Per-agent node function stub
+│           ├── route_fn.py          # Conditional routing function stub
+│           └── required_guard.py    # @required runtime validation stub
 │
 ├── cli/                            # Command-Line Interface
 │   └── index.js                    # CLI entry point, argument parsing, subprocess runner
@@ -84,14 +92,27 @@ The compiler module validates the AST and transforms it into runtime-independent
 | `compiler.js` | Pipeline orchestrator (`Compiler`). Chains lexer → parser → validator → IR generator. Returns a `CompilationResult` with status, tokens, AST, validation, IR, and any errors. |
 | `index.js` | Public API — re-exports `Compiler`, `CompilationResult`, `SemanticValidator`, `Diagnostic`, `ValidationResult`, `IRGenerator`. |
 
+### `adapters/` — Runtime Adapters and Shared Infrastructure
+
+Target-language source lives only in `.py`/`.ts`/`.js` **stub files** under each adapter's `templates/` directory — never inline as JS string literals. `.js` files under `adapters/` map IR data onto template tokens; they contain no target-language source themselves.
+
+| File | Responsibility |
+|---|---|
+| `base-adapter.js` | `BaseAdapter` — the shared, target-agnostic `generate()` contract: compatibility check → input validation → stub render. Every adapter subclasses it and defines `templateDir`, `mainTemplate`, and `buildTokens()`. |
+| `template-engine.js` | Zero-dependency renderer. Reads a stub file and substitutes `{{ TOKEN }}` placeholders with the values from `buildTokens()`. |
+| `lang/python.js` | Python formatting helpers shared by any Python-targeting adapter: type mapping, literal rendering, identifier casing, string escaping, IR expression lowering. Framework-agnostic — a CrewAI or AutoGen adapter would reuse it without depending on LangGraph. |
+
 ### `adapters/langgraph/` — LangGraph Python Adapter
 
 The adapter module transforms IR into executable Python code targeting the LangGraph framework.
 
 | File | Responsibility |
 |---|---|
-| `index.js` | `LangGraphAdapter` class. Validates IR compatibility, builds an intermediate generation model, maps OAF types to Python types, and composes the final Python script from templates. |
-| `templates.js` | Seven template generator functions: `generateHeaderTemplate`, `generateImportsTemplate`, `generateStateClassTemplate`, `generateLlmHelperTemplate`, `generateAgentNodeTemplate`, `generateGraphBuilderTemplate`, `generateMainTemplate`. |
+| `index.js` | `LangGraphAdapter` class, extends `BaseAdapter`. Validates IR compatibility, builds an intermediate generation model, maps OAF types to Python types, and maps that model onto template tokens. |
+| `templates/workflow.py` | Main stub — file header, imports, `WorkflowState` TypedDict, `get_llm()` helper, graph construction, and the `__main__` execution block. |
+| `templates/agent_node.py` | Stub for a single agent node function, rendered once per agent. |
+| `templates/route_fn.py` | Stub for a conditional-routing function, rendered once per group of edges sharing a source when any edge in the group has a `when` condition. |
+| `templates/required_guard.py` | Stub for the runtime `@required` state-variable guard; rendered only when the workflow declares required fields. |
 
 ### `cli/` — Command-Line Interface
 

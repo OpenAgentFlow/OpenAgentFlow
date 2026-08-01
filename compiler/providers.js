@@ -6,7 +6,8 @@
  * key checks (cli/index.js), the validator's provider field check
  * (compiler/validator.js), and the LangGraph adapter, which regenerates this
  * table as an equivalent Python if/elif chain for the runtime get_llm()
- * dispatch (adapters/langgraph/templates.js).
+ * dispatch (adapters/langgraph/templates/workflow.py, via the
+ * PROVIDER_INFERENCE token).
  *
  * Adding a provider or model family only requires editing PROVIDER_RULES.
  */
