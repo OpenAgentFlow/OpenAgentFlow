@@ -10,9 +10,6 @@
 
 import { fileURLToPath } from 'node:url';
 import {
-  generateMainTemplate,
-} from './templates.js';
-import {
   irTypeToPython,
   pythonDefault,
   toPythonLiteral,
@@ -47,26 +44,25 @@ export class LangGraphAdapter extends BaseAdapter {
   buildTokens() {
     const model = this._buildGenerationModel();
 
-    // Sections still emitted from JavaScript. Shrinks with each extraction
-    // task until Task 9 removes the token entirely.
-    const remaining = generateMainTemplate(model.main);
-
     return {
-      WORKFLOW_NAME:       model.header.workflowName,
-      COMPILER_VERSION:    model.header.version,
-      OPERATOR_IMPORT:     model.imports.needsOperator ? 'import operator' : '',
-      TYPING_IMPORTS:      model.imports.typingImports.sort().join(', '),
-      STATE_FIELDS:        this._stateFields(model.stateClass.fields),
-      DEFAULT_MODEL:       pythonLiteralOrNone(model.llmHelper.defaultModel),
-      DEFAULT_TEMPERATURE: model.llmHelper.defaultTemperature,
-      PROVIDER_INFERENCE:  pythonProviderInferenceLines(''),
-      AGENT_NODES:         model.agents.map(agent => this._agentNode(agent)),
-      GRAPH_NODES:         model.graphBuilder.nodes.map(
+      WORKFLOW_NAME:        model.header.workflowName,
+      COMPILER_VERSION:     model.header.version,
+      OPERATOR_IMPORT:      model.imports.needsOperator ? 'import operator' : '',
+      TYPING_IMPORTS:       model.imports.typingImports.sort().join(', '),
+      STATE_FIELDS:         this._stateFields(model.stateClass.fields),
+      DEFAULT_MODEL:        pythonLiteralOrNone(model.llmHelper.defaultModel),
+      DEFAULT_TEMPERATURE:  model.llmHelper.defaultTemperature,
+      PROVIDER_INFERENCE:   pythonProviderInferenceLines(''),
+      AGENT_NODES:          model.agents.map(agent => this._agentNode(agent)),
+      GRAPH_NODES:          model.graphBuilder.nodes.map(
         node => `graph.add_node("${node.id}", ${node.fnName})`
       ),
-      ENTRYPOINT:          model.graphBuilder.entrypoint,
-      GRAPH_EDGES:         this._graphEdges(model.graphBuilder),
-      REMAINING:           remaining,
+      ENTRYPOINT:           model.graphBuilder.entrypoint,
+      GRAPH_EDGES:          this._graphEdges(model.graphBuilder),
+      INITIAL_STATE_FIELDS: model.main.initialStateFields.map(
+        field => `"${field.name}": ${field.defaultVal},`
+      ),
+      REQUIRED_GUARD:       this._requiredGuard(model.main.requiredFields),
     };
   }
 
@@ -177,6 +173,18 @@ export class LangGraphAdapter extends BaseAdapter {
       const baseType = `Optional[${field.pyType}]`;
       const typeStr = field.reducer ? `Annotated[${baseType}, operator.add]` : baseType;
       return `${field.name}: ${typeStr}${comment}`;
+    });
+  }
+
+  /**
+   * Guard rejecting unset @required state variables at runtime.
+   * Empty when the workflow declares none.
+   * @returns {string}
+   */
+  _requiredGuard(requiredFields) {
+    if (requiredFields.length === 0) return '';
+    return this.renderTemplate('required_guard.py', {
+      REQUIRED_FIELDS: JSON.stringify(requiredFields),
     });
   }
 

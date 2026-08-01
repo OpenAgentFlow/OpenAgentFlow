@@ -226,4 +226,56 @@ def build_graph() -> StateGraph:
     {{ GRAPH_EDGES }}
     return graph.compile()
 
-{{ REMAINING }}
+# ─── Execution ──────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+    # Ensure at least one API key is set
+    if not _LLM_PROVIDER:
+        print("Error: No LLM provider configured.")
+        print("  Run 'npx openagentflow auth' to configure credentials or edit your local .env file.")
+        print("  Or set manually: export GOOGLE_API_KEY='AIza...'")
+        exit(1)
+
+    print(f"Default fallback provider: {_LLM_PROVIDER}")
+    app = build_graph()
+
+    # Initial state — populate input fields before running
+    initial_state: WorkflowState = {
+        {{ INITIAL_STATE_FIELDS }}
+    }
+
+    # Override initial_state from --input / -i file or OAF_INPUT_FILE if provided at runtime
+    input_file = os.environ.get("OAF_INPUT_FILE")
+    args = sys.argv[1:]
+    for idx in range(len(args)):
+        if args[idx] in ("--input", "-i") and idx + 1 < len(args):
+            input_file = args[idx + 1]
+            break
+        elif args[idx].startswith("--input="):
+            input_file = args[idx].split("=")[1]
+            break
+        elif args[idx].startswith("-i="):
+            input_file = args[idx].split("=")[1]
+            break
+
+    if input_file:
+        try:
+            with open(input_file, "r", encoding="utf-8") as f:
+                runtime_input = json.load(f)
+                if isinstance(runtime_input, dict):
+                    initial_state.update(runtime_input)
+        except Exception as err:
+            print(f"Error reading input file '{input_file}': {err}", file=sys.stderr)
+            sys.exit(1)
+
+    {{ REQUIRED_GUARD }}
+    print(f"Running workflow: {{ WORKFLOW_NAME }}")
+    print(f"{'-' * 50}")
+
+    result = app.invoke(initial_state)
+
+    print(f"{'-' * 50}")
+    print("Workflow completed. Final state:")
+    print(json.dumps(result, indent=2, default=str))
