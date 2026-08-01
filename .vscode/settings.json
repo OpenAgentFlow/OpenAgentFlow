@@ -5,6 +5,5 @@
   // so semantic analysis is disabled for that directory only.
   "python.analysis.ignore":  ["**/adapters/*/templates/**"],
   "python.analysis.exclude": ["**/adapters/*/templates/**"],
-  "ruff.exclude":            ["**/adapters/*/templates/**"],
-  "files.associations": {}
+  "ruff.exclude":            ["**/adapters/*/templates/**"]
 }

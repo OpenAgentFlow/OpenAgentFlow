@@ -149,7 +149,7 @@ graph TD
 | **`cli/`** | Command-line interface, argument parsing, subprocess management |
 | **`spec/`** | Formal language specifications (not executable code) |
 | **`examples/`** | Sample `.oaf` workflows |
-| **`tests/`** | 131-test suite across 9 test files |
+| **`tests/`** | 257-test suite across 13 test files |
 
 ---
 

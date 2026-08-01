@@ -11,7 +11,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
@@ -51,7 +51,22 @@ function assertMatchesSnapshot(code, name) {
   const snapshotPath = resolve(SNAPSHOTS_DIR, `${name}.py`);
   const shouldUpdate = process.env.UPDATE_SNAPSHOTS === '1';
 
-  if (!existsSync(snapshotPath) || shouldUpdate) {
+  if (!existsSync(snapshotPath)) {
+    if (!shouldUpdate) {
+      throw new Error(
+        `Snapshot missing: ${snapshotPath}\n` +
+        `A missing snapshot is treated as a failure, not an invitation to record ` +
+        `one — otherwise deleting the safety net silently "passes". If the ` +
+        `absence is intentional (e.g. a new example), rerun with ` +
+        `UPDATE_SNAPSHOTS=1 to record it, then review the diff before committing.`
+      );
+    }
+    mkdirSync(dirname(snapshotPath), { recursive: true });
+    writeFileSync(snapshotPath, lf(code), 'utf-8');
+    return;
+  }
+
+  if (shouldUpdate) {
     writeFileSync(snapshotPath, lf(code), 'utf-8');
     return;
   }
@@ -119,10 +134,6 @@ function assertStructurallyClean(code, name) {
 }
 
 describe('Generated Python: stability', () => {
-  if (!existsSync(SNAPSHOTS_DIR)) {
-    mkdirSync(SNAPSHOTS_DIR, { recursive: true });
-  }
-
   for (const [example, name] of EXAMPLES) {
     it(`${example} output should match snapshot`, () => {
       assertMatchesSnapshot(generate(example), name);
@@ -144,4 +155,41 @@ describe('Generated Python: validity', () => {
       assertParses(generate(example), name);
     });
   }
+});
+
+describe('Generated Python: snapshot guard', () => {
+  it('throws for a missing snapshot when UPDATE_SNAPSHOTS is unset, and records nothing', () => {
+    // Name cannot collide with a real snapshot basename from EXAMPLES above.
+    const name = '__does_not_exist__';
+    const snapshotPath = resolve(SNAPSHOTS_DIR, `${name}.py`);
+    const originalFlag = process.env.UPDATE_SNAPSHOTS;
+    delete process.env.UPDATE_SNAPSHOTS;
+
+    try {
+      assert.ok(
+        !existsSync(snapshotPath),
+        `fixture snapshot must not already exist: ${snapshotPath}`
+      );
+
+      assert.throws(
+        () => assertMatchesSnapshot('print("placeholder")\n', name),
+        /Snapshot missing/,
+        'a missing snapshot with UPDATE_SNAPSHOTS unset must fail, not silently record'
+      );
+
+      assert.ok(
+        !existsSync(snapshotPath),
+        'the guard must not create a snapshot file as a side effect of failing'
+      );
+    } finally {
+      if (originalFlag === undefined) {
+        delete process.env.UPDATE_SNAPSHOTS;
+      } else {
+        process.env.UPDATE_SNAPSHOTS = originalFlag;
+      }
+      if (existsSync(snapshotPath)) {
+        rmSync(snapshotPath);
+      }
+    }
+  });
 });

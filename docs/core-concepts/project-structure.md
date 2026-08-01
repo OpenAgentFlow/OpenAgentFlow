@@ -48,7 +48,7 @@ OpenAgentFlow/
 │   ├── software-dev.oaf            # Three-agent pipeline with tools
 │   └── summarize-input.json        # Sample input data for summarize workflow
 │
-├── tests/                          # Test Suite (193 tests, 9 files)
+├── tests/                          # Test Suite (257 tests, 13 files)
 │   ├── lexer.test.js               # Tokenization tests
 │   ├── parser.test.js              # AST parsing tests
 │   ├── validator.test.js           # Semantic validation tests
@@ -56,9 +56,13 @@ OpenAgentFlow/
 │   ├── integration.test.js         # Full pipeline tests against all examples
 │   ├── snapshot.test.js            # Deterministic IR snapshot tests
 │   ├── adapter.test.js             # LangGraph Python generation tests
+│   ├── base-adapter.test.js        # BaseAdapter contract tests
+│   ├── template-engine.test.js     # Stub-rendering engine tests
+│   ├── python-snapshot.test.js     # Generated Python stability tests
 │   ├── cli.test.js                 # CLI command & flag tests
+│   ├── env.test.js                 # Env-hierarchy resolution tests
 │   ├── e2e-flow.test.js            # Live LLM execution tests
-│   └── snapshots/                  # Stored IR snapshot references
+│   └── snapshots/                  # Stored IR and Python snapshot references
 │
 ├── llm/handover/                   # Architecture & session handover logs
 ├── package.json                    # Project configuration
@@ -94,7 +98,7 @@ The compiler module validates the AST and transforms it into runtime-independent
 
 ### `adapters/` — Runtime Adapters and Shared Infrastructure
 
-Target-language source lives only in `.py`/`.ts`/`.js` **stub files** under each adapter's `templates/` directory — never inline as JS string literals. `.js` files under `adapters/` map IR data onto template tokens; they contain no target-language source themselves.
+Static target-language source lives in `.py`/`.ts`/`.js` **stub files** under each adapter's `templates/` directory. `.js` files under `adapters/` map IR data onto template tokens; the rule is that they contain target-language source only as small per-item expressions that can't be represented as data (a lowered `when` condition, a type, a literal) — a per-item statement should be a JSON data token plus a static loop in the stub instead, and static boilerplate always lives in a stub. Two call sites (`graph.add_node`/`add_edge` in the LangGraph adapter) are a deliberate, reviewed exception to that; see [`docs/components/adapters.md`](../components/adapters.md#stub-files-and-the-template-engine) for the full rule and its exceptions.
 
 | File | Responsibility |
 |---|---|
