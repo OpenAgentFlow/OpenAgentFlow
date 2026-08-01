@@ -10,7 +10,6 @@
 
 import { fileURLToPath } from 'node:url';
 import {
-  generateAgentNodeTemplate,
   generateGraphBuilderTemplate,
   generateMainTemplate,
 } from './templates.js';
@@ -51,7 +50,6 @@ export class LangGraphAdapter extends BaseAdapter {
     // Sections still emitted from JavaScript. Shrinks with each extraction
     // task until Task 9 removes the token entirely.
     const remaining = [
-      ...model.agents.map(agent => generateAgentNodeTemplate(agent)),
       generateGraphBuilderTemplate(model.graphBuilder),
       generateMainTemplate(model.main),
     ].join('\n');
@@ -65,8 +63,52 @@ export class LangGraphAdapter extends BaseAdapter {
       DEFAULT_MODEL:       pythonLiteralOrNone(model.llmHelper.defaultModel),
       DEFAULT_TEMPERATURE: model.llmHelper.defaultTemperature,
       PROVIDER_INFERENCE:  pythonProviderInferenceLines(''),
+      AGENT_NODES:         model.agents.map(agent => this._agentNode(agent)),
       REMAINING:           remaining,
     };
+  }
+
+  /**
+   * The multi-output JSON instruction appended to a system prompt.
+   * Prose destined for a prompt, not code, so it stays in JavaScript.
+   * @param {string[]} outputs
+   * @returns {string}
+   */
+  _jsonFormatHint(outputs) {
+    if (outputs.length <= 1) return '';
+    return `\\n\\nIMPORTANT: You must respond ONLY with a valid JSON object containing exactly these fields: ${outputs.join(', ')}. Do not include any other text, markdown, or commentary outside the JSON object.`;
+  }
+
+  /**
+   * The lines that assemble `user_message` from state.
+   * @param {string[]} inputs
+   * @returns {string[]}
+   */
+  _userMessage(inputs) {
+    if (!inputs || inputs.length === 0) {
+      return ['user_message = json.dumps({k: v for k, v in state.items() if v is not None})'];
+    }
+    const lines = ['# Collect input from state', 'user_parts = []'];
+    for (const input of inputs) {
+      lines.push(`if state.get("${input}") is not None:`);
+      lines.push(`    user_parts.append(f"${input}: {state['${input}']}")`);
+    }
+    lines.push('user_message = "\\n".join(user_parts) if user_parts else "No input provided."');
+    return lines;
+  }
+
+  /** Render one agent node function. */
+  _agentNode(agent) {
+    return this.renderTemplate('agent_node.py', {
+      FN_NAME:      agent.fnName,
+      AGENT_ID:     agent.id,
+      MODEL:        pythonLiteralOrNone(agent.model),
+      TEMPERATURE:  agent.temperature,
+      PROVIDER:     pythonLiteralOrNone(agent.provider),
+      INSTRUCTIONS: agent.escapedInstructions + this._jsonFormatHint(agent.outputs),
+      USER_MESSAGE: this._userMessage(agent.inputs),
+      OUTPUTS:      JSON.stringify(agent.outputs),
+    });
   }
 
   /**
