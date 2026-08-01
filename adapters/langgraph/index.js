@@ -10,7 +10,6 @@
 
 import { fileURLToPath } from 'node:url';
 import {
-  generateGraphBuilderTemplate,
   generateMainTemplate,
 } from './templates.js';
 import {
@@ -20,6 +19,7 @@ import {
   pythonLiteralOrNone,
   escapeTripleQuote,
   toSnakeCase,
+  irToPythonExpr,
 } from '../lang/python.js';
 import { pythonProviderInferenceLines } from '../../compiler/providers.js';
 import { BaseAdapter } from '../base-adapter.js';
@@ -49,10 +49,7 @@ export class LangGraphAdapter extends BaseAdapter {
 
     // Sections still emitted from JavaScript. Shrinks with each extraction
     // task until Task 9 removes the token entirely.
-    const remaining = [
-      generateGraphBuilderTemplate(model.graphBuilder),
-      generateMainTemplate(model.main),
-    ].join('\n');
+    const remaining = generateMainTemplate(model.main);
 
     return {
       WORKFLOW_NAME:       model.header.workflowName,
@@ -64,6 +61,11 @@ export class LangGraphAdapter extends BaseAdapter {
       DEFAULT_TEMPERATURE: model.llmHelper.defaultTemperature,
       PROVIDER_INFERENCE:  pythonProviderInferenceLines(''),
       AGENT_NODES:         model.agents.map(agent => this._agentNode(agent)),
+      GRAPH_NODES:         model.graphBuilder.nodes.map(
+        node => `graph.add_node("${node.id}", ${node.fnName})`
+      ),
+      ENTRYPOINT:          model.graphBuilder.entrypoint,
+      GRAPH_EDGES:         this._graphEdges(model.graphBuilder),
       REMAINING:           remaining,
     };
   }
@@ -109,6 +111,57 @@ export class LangGraphAdapter extends BaseAdapter {
       USER_MESSAGE: this._userMessage(agent.inputs),
       OUTPUTS:      JSON.stringify(agent.outputs),
     });
+  }
+
+  /**
+   * Edge statements for build_graph(). Edges from the same source are
+   * grouped; a group containing any conditional edge becomes a route_
+   * function plus add_conditional_edges, otherwise a plain add_edge.
+   * @returns {string[]}
+   */
+  _graphEdges(graphBuilder) {
+    const { edges, terminals } = graphBuilder;
+    const allEdges = [
+      ...(edges || []),
+      ...(terminals || []).map(t => ({
+        source: typeof t === 'string' ? t : t.source,
+        target: 'END',
+        condition: typeof t === 'string' ? null : t.condition,
+      })),
+    ];
+    if (allEdges.length === 0) return [];
+
+    const grouped = {};
+    for (const edge of allEdges) {
+      (grouped[edge.source] ??= []).push(edge);
+    }
+
+    const target = edge => (edge.target === 'END' ? 'END' : `"${edge.target}"`);
+    const lines = ['# Add edges between agents'];
+
+    for (const [source, group] of Object.entries(grouped)) {
+      const unconditional = group.find(e => !e.condition);
+      const conditional = group.filter(e => e.condition);
+
+      if (conditional.length === 0) {
+        if (unconditional) {
+          lines.push(`graph.add_edge("${source}", ${target(unconditional)})`);
+        }
+        continue;
+      }
+
+      lines.push(this.renderTemplate('route_fn.py', {
+        SOURCE: source,
+        BRANCHES: conditional.map(
+          edge => `if ${irToPythonExpr(edge.condition)}: return ${target(edge)}`
+        ),
+        FALLBACK: unconditional
+          ? `return ${target(unconditional)}`
+          : `raise ValueError(f"No matching conditional edge from '${source}'")`,
+      }));
+    }
+
+    return lines;
   }
 
   /**

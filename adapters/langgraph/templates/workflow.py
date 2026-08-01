@@ -211,4 +211,19 @@ def _parse_llm_output(raw_content, outputs):
         return {}
 
 {{ AGENT_NODES }}
+# ─── Graph Construction ──────────────────────────────────────────────────────
+
+def build_graph() -> StateGraph:
+    """Build and compile the LangGraph workflow."""
+    graph = StateGraph(WorkflowState)
+
+    # Register agent nodes
+    {{ GRAPH_NODES }}
+
+    # Set entry point
+    graph.set_entry_point("{{ ENTRYPOINT }}")
+
+    {{ GRAPH_EDGES }}
+    return graph.compile()
+
 {{ REMAINING }}
