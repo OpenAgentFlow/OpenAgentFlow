@@ -21,9 +21,17 @@ OpenAgentFlow/
 │   └── index.js                    # Compiler public API (re-exports)
 │
 ├── adapters/                       # Target Runtime Adapters
+│   ├── base-adapter.js             # BaseAdapter: shared generate() contract
+│   ├── template-engine.js          # Zero-dependency {{ TOKEN }} stub renderer
+│   ├── lang/
+│   │   └── python.js                # Python formatting helpers (framework-agnostic)
 │   └── langgraph/
-│       ├── index.js                # LangGraph adapter (IR → Python)
-│       └── templates.js            # Python code template generators
+│       ├── index.js                # LangGraph adapter (IR → tokens)
+│       └── templates/              # Python stub files rendered by the template engine
+│           ├── workflow.py          # Main stub: header, state, LLM helper, graph, main
+│           ├── agent_node.py        # Per-agent node function stub
+│           ├── route_fn.py          # Conditional routing function stub
+│           └── required_guard.py    # @required runtime validation stub
 │
 ├── cli/                            # Command-Line Interface
 │   └── index.js                    # CLI entry point, argument parsing, subprocess runner
@@ -40,7 +48,7 @@ OpenAgentFlow/
 │   ├── software-dev.oaf            # Three-agent pipeline with tools
 │   └── summarize-input.json        # Sample input data for summarize workflow
 │
-├── tests/                          # Test Suite (193 tests, 9 files)
+├── tests/                          # Test Suite (257 tests, 13 files)
 │   ├── lexer.test.js               # Tokenization tests
 │   ├── parser.test.js              # AST parsing tests
 │   ├── validator.test.js           # Semantic validation tests
@@ -48,9 +56,13 @@ OpenAgentFlow/
 │   ├── integration.test.js         # Full pipeline tests against all examples
 │   ├── snapshot.test.js            # Deterministic IR snapshot tests
 │   ├── adapter.test.js             # LangGraph Python generation tests
+│   ├── base-adapter.test.js        # BaseAdapter contract tests
+│   ├── template-engine.test.js     # Stub-rendering engine tests
+│   ├── python-snapshot.test.js     # Generated Python stability tests
 │   ├── cli.test.js                 # CLI command & flag tests
+│   ├── env.test.js                 # Env-hierarchy resolution tests
 │   ├── e2e-flow.test.js            # Live LLM execution tests
-│   └── snapshots/                  # Stored IR snapshot references
+│   └── snapshots/                  # Stored IR and Python snapshot references
 │
 ├── llm/handover/                   # Architecture & session handover logs
 ├── package.json                    # Project configuration
@@ -84,14 +96,27 @@ The compiler module validates the AST and transforms it into runtime-independent
 | `compiler.js` | Pipeline orchestrator (`Compiler`). Chains lexer → parser → validator → IR generator. Returns a `CompilationResult` with status, tokens, AST, validation, IR, and any errors. |
 | `index.js` | Public API — re-exports `Compiler`, `CompilationResult`, `SemanticValidator`, `Diagnostic`, `ValidationResult`, `IRGenerator`. |
 
+### `adapters/` — Runtime Adapters and Shared Infrastructure
+
+Static target-language source lives in `.py`/`.ts`/`.js` **stub files** under each adapter's `templates/` directory. `.js` files under `adapters/` map IR data onto template tokens; the rule is that they contain target-language source only as small per-item expressions that can't be represented as data (a lowered `when` condition, a type, a literal) — a per-item statement should be a JSON data token plus a static loop in the stub instead, and static boilerplate always lives in a stub. Two call sites (`graph.add_node`/`add_edge` in the LangGraph adapter) are a deliberate, reviewed exception to that; see [`docs/components/adapters.md`](../components/adapters.md#stub-files-and-the-template-engine) for the full rule and its exceptions.
+
+| File | Responsibility |
+|---|---|
+| `base-adapter.js` | `BaseAdapter` — the shared, target-agnostic `generate()` contract: compatibility check → input validation → stub render. Every adapter subclasses it and defines `templateDir`, `mainTemplate`, and `buildTokens()`. |
+| `template-engine.js` | Zero-dependency renderer. Reads a stub file and substitutes `{{ TOKEN }}` placeholders with the values from `buildTokens()`. |
+| `lang/python.js` | Python formatting helpers shared by any Python-targeting adapter: type mapping, literal rendering, identifier casing, string escaping, IR expression lowering. Framework-agnostic — a CrewAI or AutoGen adapter would reuse it without depending on LangGraph. |
+
 ### `adapters/langgraph/` — LangGraph Python Adapter
 
 The adapter module transforms IR into executable Python code targeting the LangGraph framework.
 
 | File | Responsibility |
 |---|---|
-| `index.js` | `LangGraphAdapter` class. Validates IR compatibility, builds an intermediate generation model, maps OAF types to Python types, and composes the final Python script from templates. |
-| `templates.js` | Seven template generator functions: `generateHeaderTemplate`, `generateImportsTemplate`, `generateStateClassTemplate`, `generateLlmHelperTemplate`, `generateAgentNodeTemplate`, `generateGraphBuilderTemplate`, `generateMainTemplate`. |
+| `index.js` | `LangGraphAdapter` class, extends `BaseAdapter`. Validates IR compatibility, builds an intermediate generation model, maps OAF types to Python types, and maps that model onto template tokens. |
+| `templates/workflow.py` | Main stub — file header, imports, `WorkflowState` TypedDict, `get_llm()` helper, graph construction, and the `__main__` execution block. |
+| `templates/agent_node.py` | Stub for a single agent node function, rendered once per agent. |
+| `templates/route_fn.py` | Stub for a conditional-routing function, rendered once per group of edges sharing a source when any edge in the group has a `when` condition. |
+| `templates/required_guard.py` | Stub for the runtime `@required` state-variable guard; rendered only when the workflow declares required fields. |
 
 ### `cli/` — Command-Line Interface
 

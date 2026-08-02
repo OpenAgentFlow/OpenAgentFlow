@@ -16,8 +16,13 @@ Future planned adapters include AutoGen and CrewAI.
 
 | File | Class/Export | Purpose |
 |---|---|---|
-| `adapters/langgraph/index.js` | `LangGraphAdapter` | IR → Python code generation |
-| `adapters/langgraph/templates.js` | 7 template functions | Python code template generators |
+| `adapters/base-adapter.js` | `BaseAdapter` | Shared, target-agnostic `generate()` contract: compatibility check → input validation → render |
+| `adapters/template-engine.js` | `render()` | Zero-dependency renderer that substitutes `{{ TOKEN }}` placeholders in a stub file |
+| `adapters/lang/python.js` | Type/literal/casing helpers | Python formatting helpers shared by any Python-targeting adapter |
+| `adapters/langgraph/index.js` | `LangGraphAdapter` | Maps IR onto template tokens for the LangGraph target |
+| `adapters/langgraph/templates/*.py` | `workflow.py`, `agent_node.py`, `route_fn.py`, `required_guard.py` | Python stub files — the actual target-language source |
+
+Static target-language source lives in the stub files under `templates/`; the `.js` files read the IR and produce a token map for the template engine to substitute into a stub. The `.js` files do emit small fragments of Python themselves: the intended case is a per-item *expression* that can't be represented as plain data (a lowered `when` condition, a type, a literal). Two call sites are a deliberate, ruled-on exception where a full per-item *statement* is built in JS instead — see [Stub Files and the Template Engine](#stub-files-and-the-template-engine) for the full rule and why.
 
 ---
 
@@ -336,21 +341,46 @@ This prevents crashes on Windows terminals with non-UTF-8 codepages (e.g., `cp12
 
 ---
 
-## Template Functions
+## Stub Files and the Template Engine
 
-The `templates.js` module contains seven template generators. Each receives a structured data object and returns a Python code string:
+Generated Python does not come from JavaScript string literals. It comes from **stub files** — plain `.py` files under `adapters/langgraph/templates/` that are valid-looking Python containing `{{ TOKEN }}` placeholders — rendered by the zero-dependency engine in `adapters/template-engine.js`.
 
-| Function | Purpose |
+| Stub | Purpose |
 |---|---|
-| `generateHeaderTemplate(params)` | File header comment block |
-| `generateImportsTemplate(params)` | Python imports (typing, langgraph, providers) |
-| `generateStateClassTemplate(params)` | `WorkflowState` TypedDict class |
-| `generateLlmHelperTemplate(params)` | `get_llm()` function |
-| `generateAgentNodeTemplate(params)` | Individual agent node function |
-| `generateGraphBuilderTemplate(params)` | `build_graph()` function |
-| `generateMainTemplate(params)` | `__main__` execution block |
+| `workflow.py` | The main stub: file header, imports, `WorkflowState` TypedDict, `get_llm()` helper, graph construction, and the `__main__` execution block |
+| `agent_node.py` | One agent node function, rendered once per agent |
+| `route_fn.py` | One conditional-routing function, rendered once per group of edges sharing a source where any edge has a `when` condition |
+| `required_guard.py` | The runtime `@required` state-variable guard, rendered only when the workflow declares required fields |
 
-The adapter's `_buildGenerationModel()` method prepares the data objects, keeping compiler logic (IR inspection, type conversion, validation) separate from template rendering.
+`render(stubPath, tokens)` reads a stub and substitutes each `{{ TOKEN }}` placeholder with the matching value from the token map. Two substitution modes, chosen by how the placeholder appears in the stub:
+
+- **Block** — the placeholder is alone on its line. The value is indented to match the placeholder's own indentation, so injected code lands at the right depth; an empty value removes the line entirely. Used for structural sections such as `AGENT_NODES` or `GRAPH_EDGES`.
+- **Inline** — the placeholder shares its line with other text. The value is spliced in verbatim, with no re-indentation. Used for values that must not be altered, such as agent instructions embedded inside a Python triple-quoted string.
+
+The engine throws if a stub declares a placeholder with no matching token, or if a token has no matching placeholder — this is what catches drift when a stub is edited without updating the adapter that feeds it, or vice versa.
+
+The `LangGraphAdapter.buildTokens()` method (`adapters/langgraph/index.js`) is where IR inspection, type conversion, and structure-building happen; it returns a plain token map and has no knowledge of how the engine applies it. This keeps compiler logic and target-language emission mostly separate, under one rule with two named exceptions:
+
+**The rule:** JS may emit target-language source only when the content is a per-item *expression* that cannot exist as data — a lowered `when` condition (`route_fn.py`'s `BRANCHES`, built with `irToPythonExpr`), a type, a literal. A per-item *statement* over a list of names should be a JSON data token plus a static loop written once in the stub — the pattern `OUTPUTS` (`agent_node.py`) and `REQUIRED_FIELDS` (`required_guard.py`) both use: `index.js` hands over `JSON.stringify(...)`, and the stub's own Python does the iterating at runtime. Static boilerplate always lives in a stub.
+
+**Ruled-on exception, kept on purpose:** `GRAPH_NODES`'s `graph.add_node(...)` calls and `_graphEdges`'s `graph.add_edge(...)` lines (`index.js:57-59,144`) are built as full statements in JS rather than data-driven. This could be data-driven, but the generated Python is meant to be read and edited by users, and an explicit call per node/edge reads better than a loop over an opaque list — a deliberate trade-off from the final branch review, not a gap to close.
+
+**Known gap, deferred:** `_userMessage`'s per-input `if state.get(...): user_parts.append(...)` pair (`index.js:85-96`) *is* the kind of per-item statement the rule says shouldn't live in JS — the fix is one static list comprehension in `agent_node.py` plus an `{{ INPUT_KEYS }}` data token. Not fixed on this branch because closing it changes every agent's generated bytes, which needs a deliberate, reviewed snapshot re-record — tracked as follow-up work, not silently left broken.
+
+---
+
+## Writing a New Adapter
+
+Adding a target framework (AutoGen, CrewAI, or any other) follows the same shape as the LangGraph adapter:
+
+1. **Extend `BaseAdapter`** (`adapters/base-adapter.js`). It owns the shared `generate()` contract — compatibility check, then input validation, then render — so a new adapter only needs to supply the pieces specific to its target.
+2. **Define three members** on the subclass:
+   - `templateDir` — the absolute path to the adapter's stub directory (typically `fileURLToPath(new URL('./templates/', import.meta.url))`).
+   - `mainTemplate` — the stub filename rendered as the top-level output document.
+   - `buildTokens()` — reads `this.ir` and returns a `Record<string, string | string[]>` token map. This is the only place the new adapter inspects the IR; array values are joined with newlines by the template engine.
+3. **Put target-language source in stub files** under `adapters/<target>/templates/`. Keep the file extension of the target language (`.py`, `.ts`, `.js`, …) so editors give correct syntax highlighting; embed `{{ TOKEN }}` placeholders wherever `buildTokens()` needs to inject content. The adapter's `.js` files should build target-language source only as a small per-item expression that can't be represented as data — see [Stub Files and the Template Engine](#stub-files-and-the-template-engine) for the full rule, including its two named, reviewed exceptions.
+4. **Register the target** in the `--target` switch in `cli/index.js`, alongside the existing `ir` and `langgraph` cases, so `oaf compile --target <name>` and (if the target is executable) `oaf run --target <name>` can reach it.
+5. If the new adapter targets Python, reuse `adapters/lang/python.js` for type mapping, literal rendering, and identifier casing rather than duplicating those helpers — they are already framework-agnostic.
 
 ---
 

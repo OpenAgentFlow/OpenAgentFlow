@@ -8,167 +8,184 @@
  * Pipeline: IR → [LangGraph Adapter] → Python code (LangGraph StateGraph)
  */
 
+import { fileURLToPath } from 'node:url';
 import {
-  generateHeaderTemplate,
-  generateImportsTemplate,
-  generateStateClassTemplate,
-  generateLlmHelperTemplate,
-  generateAgentNodeTemplate,
-  generateGraphBuilderTemplate,
-  generateMainTemplate,
-} from './templates.js';
+  irTypeToPython,
+  pythonDefault,
+  toPythonLiteral,
+  pythonLiteralOrNone,
+  escapeTripleQuote,
+  toSnakeCase,
+  irToPythonExpr,
+} from '../lang/python.js';
+import { pythonProviderInferenceLines } from '../../compiler/providers.js';
+import { BaseAdapter } from '../base-adapter.js';
 
-// ─── IR Type → Python Type Mapping ─────────────────────────────────────────────
-
-const PRIMITIVE_TYPE_MAP = {
-  string: 'str',
-  int:    'int',
-  float:  'float',
-  bool:   'bool',
-};
-
-/**
- * Convert an IR type descriptor (e.g. "list<string>", "map<string,int>")
- * into a Python typing annotation.
- * @param {string} irType
- * @returns {string}
- */
-function irTypeToPython(irType) {
-  // Primitives
-  if (PRIMITIVE_TYPE_MAP[irType]) {
-    return PRIMITIVE_TYPE_MAP[irType];
-  }
-
-  // list<T>
-  const listMatch = irType.match(/^list<(.+)>$/);
-  if (listMatch) {
-    return `List[${irTypeToPython(listMatch[1])}]`;
-  }
-
-  // map<K,V> — need to handle nested generics carefully
-  const mapMatch = irType.match(/^map<(.+)>$/);
-  if (mapMatch) {
-    const inner = mapMatch[1];
-    const splitIdx = findTopLevelComma(inner);
-    if (splitIdx !== -1) {
-      const keyType = inner.substring(0, splitIdx);
-      const valType = inner.substring(splitIdx + 1);
-      return `Dict[${irTypeToPython(keyType)}, ${irTypeToPython(valType)}]`;
-    }
-  }
-
-  // Fallback
-  return 'Any';
-}
-
-/**
- * Find the index of the top-level comma in a type string,
- * respecting nested angle brackets.
- */
-function findTopLevelComma(str) {
-  let depth = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === '<') depth++;
-    else if (str[i] === '>') depth--;
-    else if (str[i] === ',' && depth === 0) return i;
-  }
-  return -1;
-}
-
-/**
- * Convert an agent ID to a valid Python function name (snake_case).
- * @param {string} id
- * @returns {string}
- */
-function toSnakeCase(id) {
-  return id
-    .replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '_' : '') + c.toLowerCase())
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .toLowerCase();
-}
-
-/**
- * Escape a string for use inside a Python triple-quoted string.
- * @param {string} str
- * @returns {string}
- */
-function escapePythonTripleQuote(str) {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"""/g, '\\"\\"\\"');
-}
+const TEMPLATE_DIR = fileURLToPath(new URL('./templates/', import.meta.url));
 
 // ─── LangGraph Adapter ────────────────────────────────────────────────────────
 
-export class LangGraphAdapter {
-  /**
-   * @param {object} ir - The OpenAgentFlow IR document
-   * @param {object} [options] - Adapter options
-   * @param {object} [options.input] - Initial state values loaded from file or CLI
-   */
-  constructor(ir, options = {}) {
-    this.ir = ir;
-    this.options = options;
+export class LangGraphAdapter extends BaseAdapter {
+  /** Human-readable target name, used in error messages. */
+  get targetName() {
+    return 'LangGraph';
   }
 
-  /**
-   * Generate LangGraph Python code from the IR.
-   * @returns {string} Generated Python source code
-   * @throws {Error} If the IR contains unsupported features
-   */
-  generate() {
-    const compat = this.checkCompatibility();
-    if (!compat.supported) {
-      throw new Error(
-        `IR is not compatible with LangGraph: ${compat.issues.join('; ')}`
-      );
-    }
+  /** Absolute path to the directory holding this adapter's stub files. */
+  get templateDir() { return TEMPLATE_DIR; }
 
-    // Build intermediate generation model separating compiler logic from templates
+  /** Stub filename rendered as the output document. */
+  get mainTemplate() { return 'workflow.py'; }
+
+  /**
+   * Map the IR onto template tokens for `workflow.py`.
+   * @returns {Record<string, string|string[]>}
+   */
+  buildTokens() {
     const model = this._buildGenerationModel();
 
-    // Compose final Python script using reusable templates
-    const sections = [
-      generateHeaderTemplate(model.header),
-      generateImportsTemplate(model.imports),
-      generateStateClassTemplate(model.stateClass),
-      generateLlmHelperTemplate(model.llmHelper),
-    ];
-
-    for (const agentNode of model.agents) {
-      sections.push(generateAgentNodeTemplate(agentNode));
-    }
-
-    sections.push(generateGraphBuilderTemplate(model.graphBuilder));
-    sections.push(generateMainTemplate(model.main));
-
-    return sections.join('\n');
+    return {
+      WORKFLOW_NAME:        model.header.workflowName,
+      COMPILER_VERSION:     model.header.version,
+      OPERATOR_IMPORT:      model.imports.needsOperator ? 'import operator' : '',
+      TYPING_IMPORTS:       model.imports.typingImports.sort().join(', '),
+      STATE_FIELDS:         this._stateFields(model.stateClass.fields),
+      DEFAULT_MODEL:        pythonLiteralOrNone(model.llmHelper.defaultModel),
+      DEFAULT_TEMPERATURE:  model.llmHelper.defaultTemperature,
+      PROVIDER_INFERENCE:   pythonProviderInferenceLines(''),
+      AGENT_NODES:          model.agents.map(agent => this._agentNode(agent)),
+      GRAPH_NODES:          model.graphBuilder.nodes.map(
+        node => `graph.add_node("${node.id}", ${node.fnName})`
+      ),
+      ENTRYPOINT:           model.graphBuilder.entrypoint,
+      GRAPH_EDGES:          this._graphEdges(model.graphBuilder),
+      INITIAL_STATE_FIELDS: model.main.initialStateFields.map(
+        field => `"${field.name}": ${field.defaultVal},`
+      ),
+      REQUIRED_GUARD:       this._requiredGuard(model.main.requiredFields),
+    };
   }
 
   /**
-   * Validate that the IR can be compiled to LangGraph.
-   * @returns {{ supported: boolean, issues: string[] }}
+   * The multi-output JSON instruction appended to a system prompt.
+   * Prose destined for a prompt, not code, so it stays in JavaScript.
+   * @param {string[]} outputs
+   * @returns {string}
    */
-  checkCompatibility() {
-    const issues = [];
+  _jsonFormatHint(outputs) {
+    if (outputs.length <= 1) return '';
+    return `\\n\\nIMPORTANT: You must respond ONLY with a valid JSON object containing exactly these fields: ${outputs.join(', ')}. Do not include any other text, markdown, or commentary outside the JSON object.`;
+  }
 
-    if (!this.ir.graph.entrypoint) {
-      issues.push('Missing entrypoint in IR graph');
+  /**
+   * The lines that assemble `user_message` from state.
+   * @param {string[]} inputs
+   * @returns {string[]}
+   */
+  _userMessage(inputs) {
+    if (!inputs || inputs.length === 0) {
+      return ['user_message = json.dumps({k: v for k, v in state.items() if v is not None})'];
+    }
+    const lines = ['# Collect input from state', 'user_parts = []'];
+    for (const input of inputs) {
+      lines.push(`if state.get("${input}") is not None:`);
+      lines.push(`    user_parts.append(f"${input}: {state['${input}']}")`);
+    }
+    lines.push('user_message = "\\n".join(user_parts) if user_parts else "No input provided."');
+    return lines;
+  }
+
+  /** Render one agent node function. */
+  _agentNode(agent) {
+    return this.renderTemplate('agent_node.py', {
+      FN_NAME:      agent.fnName,
+      AGENT_ID:     agent.id,
+      MODEL:        pythonLiteralOrNone(agent.model),
+      TEMPERATURE:  agent.temperature,
+      PROVIDER:     pythonLiteralOrNone(agent.provider),
+      INSTRUCTIONS: agent.escapedInstructions + this._jsonFormatHint(agent.outputs),
+      USER_MESSAGE: this._userMessage(agent.inputs),
+      OUTPUTS:      JSON.stringify(agent.outputs),
+    });
+  }
+
+  /**
+   * Edge statements for build_graph(). Edges from the same source are
+   * grouped; a group containing any conditional edge becomes a route_
+   * function plus add_conditional_edges, otherwise a plain add_edge.
+   * @returns {string[]}
+   */
+  _graphEdges(graphBuilder) {
+    const { edges, terminals } = graphBuilder;
+    const allEdges = [
+      ...(edges || []),
+      ...(terminals || []).map(t => ({
+        source: typeof t === 'string' ? t : t.source,
+        target: 'END',
+        condition: typeof t === 'string' ? null : t.condition,
+      })),
+    ];
+    if (allEdges.length === 0) return [];
+
+    const grouped = {};
+    for (const edge of allEdges) {
+      (grouped[edge.source] ??= []).push(edge);
     }
 
-    if (this.ir.graph.terminals.length === 0) {
-      issues.push('No terminal nodes in IR graph');
+    const target = edge => (edge.target === 'END' ? 'END' : `"${edge.target}"`);
+    const lines = ['# Add edges between agents'];
+
+    for (const [source, group] of Object.entries(grouped)) {
+      const unconditional = group.find(e => !e.condition);
+      const conditional = group.filter(e => e.condition);
+
+      if (conditional.length === 0) {
+        if (unconditional) {
+          lines.push(`graph.add_edge("${source}", ${target(unconditional)})`);
+        }
+        continue;
+      }
+
+      lines.push(this.renderTemplate('route_fn.py', {
+        SOURCE: source,
+        BRANCHES: conditional.map(
+          edge => `if ${irToPythonExpr(edge.condition)}: return ${target(edge)}`
+        ),
+        FALLBACK: unconditional
+          ? `return ${target(unconditional)}`
+          : `raise ValueError(f"No matching conditional edge from '${source}'")`,
+      }));
     }
 
-    if (!this.ir.agents || this.ir.agents.length === 0) {
-      issues.push('No agents defined in IR');
-    }
+    return lines;
+  }
 
-    return {
-      supported: issues.length === 0,
-      issues,
-    };
+  /**
+   * Field declarations for the WorkflowState TypedDict.
+   * Falls back to `pass` — an empty value would delete the class body line
+   * and produce a syntax error.
+   * @returns {string[]}
+   */
+  _stateFields(fields) {
+    if (fields.length === 0) return ['pass'];
+    return fields.map(field => {
+      const comment = field.required ? '  # @required' : '';
+      const baseType = `Optional[${field.pyType}]`;
+      const typeStr = field.reducer ? `Annotated[${baseType}, operator.add]` : baseType;
+      return `${field.name}: ${typeStr}${comment}`;
+    });
+  }
+
+  /**
+   * Guard rejecting unset @required state variables at runtime.
+   * Empty when the workflow declares none.
+   * @returns {string}
+   */
+  _requiredGuard(requiredFields) {
+    if (requiredFields.length === 0) return '';
+    return this.renderTemplate('required_guard.py', {
+      REQUIRED_FIELDS: JSON.stringify(requiredFields),
+    });
   }
 
   /**
@@ -179,9 +196,6 @@ export class LangGraphAdapter {
   _buildGenerationModel() {
     const vars = this.ir.state?.variables ?? [];
     const inputData = this.options?.input || {};
-    if (this.options?.input) {
-      this._validateInputData(inputData, vars);
-    }
 
     const header = {
       workflowName: this.ir.workflow.name,
@@ -200,7 +214,6 @@ export class LangGraphAdapter {
     }
     const imports = {
       typingImports: Array.from(typingImports),
-      needsLlmProviders: this.ir.agents.length > 0,
       needsOperator,
     };
 
@@ -225,7 +238,7 @@ export class LangGraphAdapter {
       model: agent.model ?? null,
       temperature: agent.temperature != null ? agent.temperature : 0.7,
       provider: agent.provider ?? null,
-      escapedInstructions: escapePythonTripleQuote(agent.instructions),
+      escapedInstructions: escapeTripleQuote(agent.instructions),
       inputs: agent.inputs ?? [],
       outputs: agent.outputs ?? [],
     }));
@@ -250,11 +263,11 @@ export class LangGraphAdapter {
         const isRequired = (v.options ?? []).some(opt => opt.name === 'required');
         let defaultVal;
         if (inputData[v.name] !== undefined) {
-          defaultVal = this._toPythonLiteral(inputData[v.name]);
+          defaultVal = toPythonLiteral(inputData[v.name]);
         } else if (isRequired) {
           defaultVal = 'None';
         } else {
-          defaultVal = this._pythonDefault(v.type);
+          defaultVal = pythonDefault(v.type);
         }
         return {
           name: v.name,
@@ -273,91 +286,5 @@ export class LangGraphAdapter {
       graphBuilder,
       main,
     };
-  }
-
-  /**
-   * Convert a JavaScript value to a Python literal string.
-   */
-  _toPythonLiteral(val) {
-    if (val === null || val === undefined) return 'None';
-    if (typeof val === 'boolean') return val ? 'True' : 'False';
-    if (typeof val === 'number') return String(val);
-    if (typeof val === 'string') return JSON.stringify(val);
-    if (Array.isArray(val)) {
-      const items = val.map(item => this._toPythonLiteral(item));
-      return `[${items.join(', ')}]`;
-    }
-    if (typeof val === 'object') {
-      const entries = Object.entries(val).map(([k, v]) => `${JSON.stringify(k)}: ${this._toPythonLiteral(v)}`);
-      return `{${entries.join(', ')}}`;
-    }
-    return JSON.stringify(val);
-  }
-
-  /**
-   * Validate initial state input data against workflow state variables.
-   */
-  _validateInputData(inputData, vars) {
-    const varMap = new Map(vars.map(v => [v.name, v]));
-
-    // 1. Unknown keys
-    for (const key of Object.keys(inputData)) {
-      if (!varMap.has(key)) {
-        throw new Error(`Input JSON contains variable "${key}" which is not defined in workflow state`);
-      }
-    }
-
-    // 2. Type compatibility
-    for (const [key, val] of Object.entries(inputData)) {
-      if (val === null || val === undefined) continue;
-      const varDef = varMap.get(key);
-      const irType = varDef.type;
-
-      let valid = true;
-      let actualType = typeof val;
-      if (Array.isArray(val)) actualType = 'list';
-
-      if (irType === 'string') {
-        valid = (typeof val === 'string');
-      } else if (irType === 'int') {
-        valid = (typeof val === 'number' && Number.isInteger(val));
-        if (!valid && typeof val === 'number') actualType = 'float';
-      } else if (irType === 'float') {
-        valid = (typeof val === 'number');
-      } else if (irType === 'bool') {
-        valid = (typeof val === 'boolean');
-      } else if (irType.startsWith('list<')) {
-        valid = Array.isArray(val);
-      } else if (irType.startsWith('map<')) {
-        valid = (typeof val === 'object' && val !== null && !Array.isArray(val));
-      }
-
-      if (!valid) {
-        throw new Error(`Type mismatch for state variable "${key}": expected ${irType}, found ${actualType}`);
-      }
-    }
-
-    // 3. Required variables check (if OAF_INPUT_FILE is not set)
-    if (!process.env.OAF_INPUT_FILE) {
-      for (const v of vars) {
-        const isRequired = (v.options ?? []).some(opt => opt.name === 'required');
-        if (isRequired && inputData[v.name] === undefined) {
-          throw new Error(`Missing required initial state variable: "${v.name}"`);
-        }
-      }
-    }
-  }
-
-  /**
-   * Return a Python default value for an IR type descriptor.
-   */
-  _pythonDefault(irType) {
-    if (irType === 'string') return '""';
-    if (irType === 'int') return '0';
-    if (irType === 'float') return '0.0';
-    if (irType === 'bool') return 'False';
-    if (irType.startsWith('list<')) return '[]';
-    if (irType.startsWith('map<')) return '{}';
-    return 'None';
   }
 }

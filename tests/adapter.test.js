@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { Compiler } from '../compiler/compiler.js';
 import { LangGraphAdapter } from '../adapters/langgraph/index.js';
 import { VERSION } from '../compiler/index.js';
+import { toPythonLiteral, pythonLiteralOrNone, irToPythonExpr } from '../adapters/lang/python.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -391,6 +392,43 @@ describe('LangGraph Adapter', () => {
     });
   });
 
+  describe('Condition Expression Lowering (irToPythonExpr)', () => {
+    it('should lower a `not` unary condition to a Python `not` expression', () => {
+      const code = generatePython(`
+        workflow "Test" {
+          state { flag: bool }
+          agent A { instructions: "a" outputs: [flag] }
+          agent B { instructions: "b" inputs: [flag] }
+          flow {
+            start -> A
+            A -> B when not flag
+            A -> end
+            B -> end
+          }
+        }
+      `);
+      assert.ok(code.includes('if (not state.get("flag")): return "B"'));
+    });
+
+    // The parser only ever produces UnaryExpr with operator "not" (see
+    // parser.js parseUnary), so a non-"not" unary operator and an
+    // unrecognized expression type can't be reached by compiling real
+    // .oaf source. These exercise irToPythonExpr's defensive fallbacks
+    // directly with hand-built IR-shaped condition objects.
+    it('should lower a non-"not" unary operator defensively', () => {
+      const result = irToPythonExpr({
+        type: 'UnaryExpr',
+        operator: '-',
+        right: { type: 'IdentifierExpr', name: 'count' },
+      });
+      assert.strictEqual(result, '(- state.get("count"))');
+    });
+
+    it('should fall back to "True" for an unrecognized expression type', () => {
+      assert.strictEqual(irToPythonExpr({ type: 'MysteryExpr' }), 'True');
+    });
+  });
+
   describe('Main Block', () => {
     it('should include API key checks for both providers', () => {
       const code = generatePython(`
@@ -469,6 +507,17 @@ describe('LangGraph Adapter', () => {
       assert.ok(!compat.supported);
       assert.ok(compat.issues.some(i => i.includes('No agents defined')));
       assert.throws(() => adapter.generate(), /IR is not compatible/);
+    });
+
+    it('should expose "LangGraph" as its targetName', () => {
+      const ir = compileToIR(`
+        workflow "Test" {
+          agent A { instructions: "test" }
+          flow { start -> A  A -> end }
+        }
+      `);
+      const adapter = new LangGraphAdapter(ir);
+      assert.strictEqual(adapter.targetName, 'LangGraph');
     });
   });
 
@@ -620,9 +669,14 @@ describe('LangGraph Adapter', () => {
     });
 
     it('should fallback to JSON.stringify for unsupported types like Symbol', () => {
-      const adapter = new LangGraphAdapter({});
-      const result = adapter._toPythonLiteral(Symbol("test"));
+      const result = toPythonLiteral(Symbol("test"));
       assert.strictEqual(result, undefined);
+    });
+
+    it('should render pythonLiteralOrNone as a quoted string when present, or None when absent', () => {
+      assert.strictEqual(pythonLiteralOrNone('gpt-4o-mini'), '"gpt-4o-mini"');
+      assert.strictEqual(pythonLiteralOrNone(null), 'None');
+      assert.strictEqual(pythonLiteralOrNone(undefined), 'None');
     });
   });
 

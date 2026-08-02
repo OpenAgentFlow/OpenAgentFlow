@@ -115,9 +115,11 @@ graph TD
         CompilerIdx["index.js<br/>Public API"]
     end
     
-    subgraph Adapters["adapters/langgraph/"]
-        Adapter["index.js<br/>LangGraph Adapter"]
-        Templates["templates.js<br/>Python Templates"]
+    subgraph Adapters["adapters/"]
+        BaseAdapter["base-adapter.js<br/>Shared generate() contract"]
+        Engine["template-engine.js<br/>{{ TOKEN }} renderer"]
+        Adapter["langgraph/index.js<br/>IR → Tokens"]
+        Stubs["langgraph/templates/*.py<br/>Python Stubs"]
     end
     
     CLI --> CompilerMod
@@ -128,7 +130,9 @@ graph TD
     CompilerMod --> IRGen
     ParserMod --> AST
     ParserMod --> Lexer
-    Adapter --> Templates
+    Adapter --> BaseAdapter
+    BaseAdapter --> Engine
+    Engine --> Stubs
 
     style CLI fill:#ffd,stroke:#333
     style CompilerMod fill:#ddf,stroke:#333
@@ -145,7 +149,7 @@ graph TD
 | **`cli/`** | Command-line interface, argument parsing, subprocess management |
 | **`spec/`** | Formal language specifications (not executable code) |
 | **`examples/`** | Sample `.oaf` workflows |
-| **`tests/`** | 131-test suite across 9 test files |
+| **`tests/`** | 257-test suite across 13 test files |
 
 ---
 

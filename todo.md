@@ -13,7 +13,7 @@ This document aggregates all remaining work items, technical debt, and planned e
 
 - [ ] **Workflow `config {}` Runtime Enforcement (`[/]` Partially Implemented)**
   - *Current State:* `max_iterations`, `timeout_seconds`, and `runtime` are parsed into IR (`ir.config`).
-  - *TODO:* Update LangGraph template generator (`adapters/langgraph/templates.js`) to enforce `recursion_limit=max_iterations` on `graph.invoke(...)` and wrap execution in a timeout handler (`timeout_seconds`). *(Ref: `handover/2026-07-18-documentation.md` M3)*
+  - *TODO:* Update the LangGraph stub (`adapters/langgraph/templates/workflow.py`) to enforce `recursion_limit=max_iterations` on `graph.invoke(...)` and wrap execution in a timeout handler (`timeout_seconds`). *(Ref: `handover/2026-07-18-documentation.md` M3)*
 
 - [ ] **Config Key Validation (`[ ]` Unimplemented)**
   - *Current State:* Unknown keys inside `config {}` pass through without error or warning.
@@ -50,7 +50,7 @@ This document aggregates all remaining work items, technical debt, and planned e
 ### 2.1 LangGraph Adapter Enhancements
 - [ ] **Agent `tools` Binding & Execution (`[/]` Partially Implemented)**
   - *Current State:* `tools: ["search", "calculator"]` on agent blocks is parsed, validated, and exported to IR (`agents[].tools`).
-  - *TODO:* Update `adapters/langgraph/templates.js` to emit tool definition imports, call `llm.bind_tools(tools)` in agent nodes, and construct LangGraph `ToolNode` / conditional routing for tool invocations. *(Ref: `handover/2026-07-18-documentation.md` H3)*
+  - *TODO:* Update `adapters/langgraph/templates/agent_node.py` and `adapters/langgraph/index.js` to emit tool definition imports, call `llm.bind_tools(tools)` in agent nodes, and construct LangGraph `ToolNode` / conditional routing for tool invocations. *(Ref: `handover/2026-07-18-documentation.md` H3)*
 
 - [ ] **Explicit Default Temperature Handling (`[/]` Partially Implemented)**
   - *Current State:* If an agent omits `temperature`, `adapters/langgraph/index.js` defaults to `0.7` silently.
